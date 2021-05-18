@@ -22,3 +22,5 @@ VignetteBuilder: knitr
 Language: en-US
 Imports:
     data.table
+Depends: 
+    R (>= 2.10)
