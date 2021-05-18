@@ -1,0 +1,26 @@
+Package: packageTemplate
+Version: 0.0.0.9000
+Title: ihmeuw-demographics R package template
+Description: ihmeuw-demographics R package template that is used when creating
+    new R packages for our team.
+Authors@R: c(person("Charlton", "Callender", email = "chacalle@uw.edu", role = "aut"),
+             person("Katie", "Paulson", email = "krpaul@uw.edu", role = "aut"),
+             person("Spencer", "Pease", email = "spease@uw.edu", role = "aut"),
+             person("Haidong", "Wang", email = "haidong@uw.edu", role = "cre"),
+             person("Institute for Health Metrics and Evaluation", role = c("cph", "fnd")))
+URL: https://github.com/ihmeuw-demographics/packageTemplate/
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.0
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown,
+    spelling,
+    covr
+VignetteBuilder: knitr
+Language: en-US
+Imports:
+    data.table
