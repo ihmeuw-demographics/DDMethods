@@ -1,12 +1,11 @@
-# packageTemplate
+# DDMethods
 
 <!-- badges: start -->
-[![R build status](https://github.com/ihmeuw-demographics/packageTemplate/workflows/R-CMD-check/badge.svg)](https://github.com/ihmeuw-demographics/packageTemplate/actions)
-[![Codecov test coverage](https://codecov.io/gh/ihmeuw-demographics/packageTemplate/branch/master/graph/badge.svg)](https://codecov.io/gh/ihmeuw-demographics/package_template?branch=master)
+[![R build status](https://github.com/ihmeuw-demographics/DDMethods/workflows/R-CMD-check/badge.svg)](https://github.com/ihmeuw-demographics/DDMethods/actions)
+[![Codecov test coverage](https://codecov.io/gh/ihmeuw-demographics/DDMethods/branch/master/graph/badge.svg)](https://codecov.io/gh/ihmeuw-demographics/DDMethods?branch=main)
 <!-- badges: end -->
 
-ihmeuw-demographics R package template that is used when creating new R packages
-for our team.
+ihmeuw-demographics R package for Death Distribution Methods (DDMs) to estimate completeness of death registration systems.
 
 ## Installation
 
@@ -14,14 +13,14 @@ This package has not yet been published on CRAN, but can be installed from
 GitHub using the [remotes](https://remotes.r-lib.org/) package.
 
 ```r
-remotes::install_github("ihmeuw-demographics/packageTemplate")
+remotes::install_github("ihmeuw-demographics/DDMethods")
 ```
 
 ## Getting help
 
-packageTemplate function documentation and vignettes can be found at [https://ihmeuw-demographics.github.io/packageTemplate/index.html](https://ihmeuw-demographics.github.io/packageTemplate/index.html)
+DDMethods function documentation and vignettes can be found at [https://ihmeuw-demographics.github.io/DDMethods/index.html](https://ihmeuw-demographics.github.io/DDMethods/index.html)
 
-If you encounter a clear bug, missing documentation, or a feature you'd like to see implemented please file an issue on [github](https://github.com/ihmeuw-demographics/packageTemplate/issues) with the information requested in the issue template.
+If you encounter a clear bug, missing documentation, or a feature you'd like to see implemented please file an issue on [github](https://github.com/ihmeuw-demographics/DDMethods/issues) with the information requested in the issue template.
 
 ## Contributing
 
