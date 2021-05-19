@@ -71,4 +71,15 @@ test_that("ggb plotting works", {
 })
 
 
+# # test Tim Riffe code
+# # commented out because DDM package has a lot of dependencies, and this test
+# # does not need to be run regularly with package compilation
 
+# dt_tr <- copy(dt)
+# dt_tr[, cod := "South_Africa_male"]
+# setnames(dt_tr, "age_start", "age")
+# # no migration (gives us 0.940)
+# test <- DDM::ggb(dt_tr, exact.ages = seq(5, 80, 5))
+# # with migration (gives us 0.914)
+# setnames(dt_tr, "migrants", "mig")
+# test <- DDM::ggb(dt_tr, exact.ages = seq(5, 80, 5))
