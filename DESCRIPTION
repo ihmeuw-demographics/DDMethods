@@ -21,6 +21,12 @@ Suggests:
 VignetteBuilder: knitr
 Language: en-US
 Imports:
-    data.table
+    data.table,
+    ggplot2,
+    ggrepel,
+    checkmate,
+    demUtils
+Remotes:
+    ihmeuw-demographics/demUtils
 Depends: 
     R (>= 2.10)

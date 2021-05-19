@@ -17,4 +17,11 @@ NULL
 # https://www.r-bloggers.com/no-visible-binding-for-global-variable/
 # https://stackoverflow.com/questions/9439256/how-can-i-handle-r-cmd-check-no-visible-binding-for-global-variable-notes-when
 # https://community.rstudio.com/t/how-to-solve-no-visible-binding-for-global-variable-note/28887
-utils::globalVariables(c("variables"))
+utils::globalVariables(c("age_length", "age_start", "bdays_age_a",
+                         "completeness", "date1", "date2", "death_rate",
+                         "deaths", "entry_minus_growth", "entry_rate",
+                         "growth_rate", "intercept", "k1", "k1_over_k2",
+                         "k2", "mig_rate", "migrants", "pop1",
+                         "pop1_aminus1", "pop2", "pop_age_aplus", "slope",
+                         "sd"))
+
