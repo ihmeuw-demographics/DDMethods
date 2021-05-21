@@ -9,7 +9,9 @@ seg(
   age_trim_lower = 25,
   age_trim_upper = 65,
   id_cols = c("age_start", "sex"),
-  migration = F
+  migration = F,
+  input_deaths_annual = T,
+  input_migrants_annual = T
 )
 }
 \arguments{
@@ -19,10 +21,10 @@ Input data, must include columns 'pop1', 'pop2', 'deaths', 'age_start',
 'migrants' to be included if \code{migration = T}.}
 
 \item{age_trim_lower}{[\code{numeric(1)}]\cr
-age-trim lower bound}
+age-trim: lower bound of 'age_start' included (inclusive)}
 
 \item{age_trim_upper}{[\code{numeric(1)}]\cr
-age trim upper bound}
+age-trim: upper bound of 'age_start' included (exclusive)}
 
 \item{id_cols}{[\code{character()}]\cr
 Column names that uniquely identify rows of \code{dt}.
@@ -33,6 +35,20 @@ columns define the groups to calculate completeness for.}
 Whether a 'migrants' column should be used. If migration
 is available and of reasonable quality, it improves the GGB estimation.
 However, these data are not often available.}
+
+\item{input_deaths_annual}{[\code{logical(1)}]\cr
+Whether input deaths are formatted as annual average recorded per year.
+Alternative is recorded deaths for the entire period between census 1
+and census 2. Default TRUE and assumes deaths are annual. If FALSE,
+deaths will be divided by the decimal number of years between 'date1' and
+'date2'.}
+
+\item{input_migrants_annual}{[\code{logical(1)}]\cr
+Whether input migrants are formatted as annual average recorded per year.
+Alternative is recorded net migrants for the entire period between census 1
+and census 2. Default TRUE and assumes net migrants are annual. If FALSE,
+migrants will be divided by the decimal number of years between 'date1' and
+'date2'.}
 }
 \value{
 [\code{list(2)}]\cr
@@ -71,19 +87,18 @@ census 2
 \examples{
 library(data.table)
 dt <- copy(zaf_2001_2007)
-setnames(dt, "age", "age_start")
 dt[, cd_region := "west"]
 id_cols <- c("location", "sex", "age_start")
 age_trim_lower = 25
 age_trim_upper = 65
-# convert from total to average annual deaths
-dt[, deaths := deaths / 5.353425]
 results <- seg(
   dt,
   age_trim_lower = age_trim_lower,
   age_trim_upper = age_trim_upper,
   id_cols = id_cols,
-  migration = FALSE
+  migration = FALSE,
+  input_deaths_annual = FALSE,
+  input_migrants_annual = FALSE
 )
 
 }

@@ -10,10 +10,6 @@
 #'   Input data, must include columns 'pop1', 'pop2', 'deaths', 'age_start',
 #'   'sex', 'date1', 'date2', 'cd_region', and all `id_cols`. Optional column
 #'   'migrants' to be included if `migration = T`.
-#' @param age_trim_lower \[`numeric(1)`\]\cr
-#'   age-trim lower bound
-#' @param age_trim_upper \[`numeric(1)`\]\cr
-#'   age trim upper bound
 #' @param id_cols \[`character()`\]\cr
 #'   Column names that uniquely identify rows of `dt`.
 #'   Must include 'age_start' and 'sex'. When 'age_start' is removed, these
@@ -22,6 +18,7 @@
 #'   Whether a 'migrants' column should be used. If migration
 #'   is available and of reasonable quality, it improves the GGB estimation.
 #'   However, these data are not often available.
+#' @inheritParams ggb
 #'
 #' @return \[`list(2)`\]\cr
 #'   * \[`data.table()`\] Input `dt` returned with additional variables
@@ -57,19 +54,18 @@
 #' @examples
 #' library(data.table)
 #' dt <- copy(zaf_2001_2007)
-#' setnames(dt, "age", "age_start")
 #' dt[, cd_region := "west"]
 #' id_cols <- c("location", "sex", "age_start")
 #' age_trim_lower = 25
 #' age_trim_upper = 65
-#' # convert from total to average annual deaths
-#' dt[, deaths := deaths / 5.353425]
 #' results <- seg(
 #'   dt,
 #'   age_trim_lower = age_trim_lower,
 #'   age_trim_upper = age_trim_upper,
 #'   id_cols = id_cols,
-#'   migration = FALSE
+#'   migration = FALSE,
+#'   input_deaths_annual = FALSE,
+#'   input_migrants_annual = FALSE
 #' )
 #'
 #' @export
@@ -78,7 +74,9 @@ seg <- function(dt,
                 age_trim_lower = 25,
                 age_trim_upper = 65,
                 id_cols = c("age_start", "sex"),
-                migration = F) {
+                migration = F,
+                input_deaths_annual = T,
+                input_migrants_annual = T) {
 
   # Validate and setup ------------------------------------------------------
 
@@ -86,6 +84,7 @@ seg <- function(dt,
   checkmate::assert_data_table(dt)
   checkmate::assert_numeric(age_trim_lower, lower = 0, len = 1)
   checkmate::assert_numeric(age_trim_upper, lower = 0, len = 1)
+  checkmate::assert_true(age_trim_lower < age_trim_upper)
   checkmate::assert_character(id_cols)
   checkmate::assert_logical(migration, len = 1)
 
@@ -103,6 +102,11 @@ seg <- function(dt,
   dt <- copy(dt)
   id_cols_no_age <- setdiff(id_cols, "age_start")
   setorderv(dt, c(id_cols, "age_start"))
+
+  # convert to annualized deaths and net migrants
+  dt[, t := as.numeric(difftime(date2, date1, units = "days")) / 365]
+  if (!input_deaths_annual) dt[, deaths := deaths / t]
+  if (migration & !input_migrants_annual) dt[, migrants := migrants / t]
 
 
   # Compute components ------------------------------------------------------
@@ -164,7 +168,6 @@ seg <- function(dt,
 # Age-specific growth rate
 # (1 / t) * ln(N2(a) / N1(a)) - migrants / sqrt(pop1 * pop2)
 gen_age_specific_growth_rate <- function(dt, migration) {
-  dt[, t := as.numeric(difftime(date2, date1, units = "days")) / 365]
   if (migration) {
     dt[, growth_rate := (1 / t) * log(pop2 / pop1) -
            migrants / sqrt(pop1 * pop2)]

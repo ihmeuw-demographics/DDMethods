@@ -8,7 +8,6 @@ library(ggrepel)
 
 dt <- copy(zaf_2001_2007)
 
-setnames(dt, "age", "age_start")
 id_cols <- c("location", "sex", "age_start")
 age_trim_lower = 5
 age_trim_upper = 85
