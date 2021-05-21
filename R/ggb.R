@@ -11,9 +11,9 @@
 #'   'date1', 'date2', and all `id_cols`. Optional column 'migrants' to be
 #'   included if `migration = T`.
 #' @param age_trim_lower \[`numeric(1)`\]\cr
-#'   age-trim lower bound
+#'   age-trim: lower bound of 'age_start' included (inclusive)
 #' @param age_trim_upper \[`numeric(1)`\]\cr
-#'   age trim upper bound
+#'   age-trim: upper bound of 'age_start' included (exclusive)
 #' @param id_cols \[`character()`\]\cr
 #'   Column names that uniquely identify rows of `dt`.
 #'   One column must be 'age_start'. When 'age_start' is removed, these
@@ -23,6 +23,18 @@
 #'   equation is growth = entries - deaths + net migration. If migration
 #'   is available and of reasonable quality, it improves the GGB estimation.
 #'   However, these data are not often available.
+#' @param input_deaths_annual \[`logical(1)`\]\cr
+#'   Whether input deaths are formatted as annual average recorded per year.
+#'   Alternative is recorded deaths for the entire period between census 1
+#'   and census 2. Default TRUE and assumes deaths are annual. If FALSE,
+#'   deaths will be divided by the decimal number of years between 'date1' and
+#'   'date2'.
+#' @param input_migrants_annual \[`logical(1)`\]\cr
+#'   Whether input migrants are formatted as annual average recorded per year.
+#'   Alternative is recorded net migrants for the entire period between census 1
+#'   and census 2. Default TRUE and assumes net migrants are annual. If FALSE,
+#'   migrants will be divided by the decimal number of years between 'date1' and
+#'   'date2'.
 #'
 #' @return \[`list(2)`\]\cr
 #'   * \[`data.table()`\] Input `dt` returned with additional variables
@@ -35,12 +47,15 @@
 #' Columns of `dt`:
 #'   * 'pop1': age-specific population recorded at census 1
 #'   * 'pop2': age-specific population recorded at census 2
-#'   * 'deaths': average annual deaths recorded between census 1 and census 2
+#'   * 'deaths': average annual deaths recorded between census 1 and census 2,
+#'     or, if 'input_deaths_annual' is FALSE, total deaths recorded between
+#'     census 1 and census 2
 #'   * 'age_start': lower bound of age interval
 #'   * 'date1': date of first census, format yyyy-mm-dd
 #'   * 'date2': date of second census, format yyyy-mm-dd
 #'   * 'migrants' (optional): average annual net migrants between census 1 and
-#'       census 2
+#'       census 2, or, if 'input_migrants_annual' is FALSE, total net migrants
+#'       recorded between census 1 and census 2
 #'
 #' @references
 #' Methods are based on the following sources:
@@ -57,14 +72,14 @@
 #' id_cols <- c("location", "sex", "age_start")
 #' age_trim_lower = 5
 #' age_trim_upper = 85
-#' # convert from total to average annual deaths
-#' dt[, deaths := deaths / 5.353425]
 #' results <- ggb(
 #'   dt,
 #'   age_trim_lower = age_trim_lower,
 #'   age_trim_upper = age_trim_upper,
 #'   id_cols = id_cols,
-#'   migration = FALSE
+#'   migration = TRUE,
+#'   input_deaths_annual = FALSE,
+#'   input_migrants_annual = FALSE
 #' )
 #'
 #' @export
@@ -73,7 +88,9 @@ ggb <- function(dt,
                 age_trim_lower = 15,
                 age_trim_upper = 65,
                 id_cols = "age_start",
-                migration = F) {
+                migration = F,
+                input_deaths_annual = T,
+                input_migrants_annual = T) {
 
   # Validate and setup ------------------------------------------------------
 
@@ -81,6 +98,7 @@ ggb <- function(dt,
   checkmate::assert_data_table(dt)
   checkmate::assert_numeric(age_trim_lower, lower = 0, len = 1)
   checkmate::assert_numeric(age_trim_upper, lower = 0, len = 1)
+  checkmate::assert_true(age_trim_lower < age_trim_upper)
   checkmate::assert_character(id_cols)
   checkmate::assert_logical(migration, len = 1)
 
@@ -97,6 +115,11 @@ ggb <- function(dt,
   dt <- copy(dt)
   id_cols_no_age <- setdiff(id_cols, "age_start")
   setorderv(dt, c(id_cols, "age_start"))
+
+  # convert to annualized deaths and net migrants
+  dt[, t := as.numeric(difftime(date2, date1, units = "days")) / 365]
+  if (!input_deaths_annual) dt[, deaths := deaths / t]
+  if (migration & !input_migrants_annual) dt[, migrants := migrants / t]
 
 
   # Compute components ------------------------------------------------------
@@ -179,7 +202,6 @@ gen_pop_age_aplus <- function(dt, id_cols_no_age) {
 # Growth rate
 # (1 / t) * ln(N2(a+) / N1(a+))
 gen_growth_rate <- function(dt, id_cols_no_age) {
-  dt[, t := as.numeric(difftime(date2, date1, units = "days")) / 365]
   dt[, growth_rate := (1 / t) * log(sum_aplus(pop2) / sum_aplus(pop1)),
      by = id_cols_no_age]
 }
