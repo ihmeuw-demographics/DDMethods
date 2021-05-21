@@ -23,5 +23,11 @@ utils::globalVariables(c("age_length", "age_start", "bdays_age_a",
                          "growth_rate", "intercept", "k1", "k1_over_k2",
                          "k2", "mig_rate", "migrants", "pop1",
                          "pop1_aminus1", "pop2", "pop_age_aplus", "slope",
-                         "sd"))
+                         "sd", "cd_region", "coale_demeny_ex",
+                         "cumulative_growth_rate", "ex", "ex_1", "ex_2",
+                         "head", "id_cols", "ndx", "open_age",
+                         "pop_age_a_synthetic_cohort",
+                         "pop_age_a_synthetic_cohort_i", "r1", "r2",
+                         "ratio_30d10_20d40", "ratio_30d10_20d40_1",
+                         "ratio_30d10_20d40_2", "sex", "sum_growth"))
 

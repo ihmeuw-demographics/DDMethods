@@ -2,5 +2,6 @@
 
 export(ggb)
 export(plot_ggb)
+export(seg)
 import(data.table)
 importFrom(utils,globalVariables)

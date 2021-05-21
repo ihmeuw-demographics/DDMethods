@@ -20,3 +20,24 @@
 #' @examples
 #' zaf_2001_2007
 "zaf_2001_2007"
+
+
+#' Coale Demeny life expectancy
+#'
+#' @description Life expectancy and ratio of 30d10 to 20d40 from Coale
+#'   Demeny life tables, to be used for approximation of open age interval
+#'   life expectancy, which is an input to SEG DDM estimation. Life tables
+#'   are downloaded using the `demogR` package.
+#'
+#' @format \[`data.table()`\] columns:
+#' \describe{
+#'  \item{cd_region}{\[`character()`\]\cr "north", "south", "west", or "east"}
+#'  \item{sex}{\[`character()`\]\cr "male", "female", or "all}
+#'  \item{index}{\[`numeric()`\]\cr Life table level, based on life expectancy at age 10}
+#'  \item{age_start}{\[`numeric()`\]\cr Lower bound of age interval}
+#'  \item{ex}{\[`numeric()`\]\cr Life expectancy}
+#'  \item{ratio_30d10_20d40}{\[`numeric()`\]\cr Ratio 30d10 to 20d40}
+#' }
+#' @examples
+#' coale_demeny_ex
+"coale_demeny_ex"
