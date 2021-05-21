@@ -9,7 +9,9 @@ ggb(
   age_trim_lower = 15,
   age_trim_upper = 65,
   id_cols = "age_start",
-  migration = F
+  migration = F,
+  input_deaths_annual = T,
+  input_migrants_annual = T
 )
 }
 \arguments{
@@ -19,10 +21,10 @@ Input data, must include columns 'pop1', 'pop2', 'deaths', 'age_start',
 included if \code{migration = T}.}
 
 \item{age_trim_lower}{[\code{numeric(1)}]\cr
-age-trim lower bound}
+age-trim: lower bound of 'age_start' included (inclusive)}
 
 \item{age_trim_upper}{[\code{numeric(1)}]\cr
-age trim upper bound}
+age-trim: upper bound of 'age_start' included (exclusive)}
 
 \item{id_cols}{[\code{character()}]\cr
 Column names that uniquely identify rows of \code{dt}.
@@ -34,6 +36,20 @@ Whether a 'migrants' column should be used. Then, the balancing
 equation is growth = entries - deaths + net migration. If migration
 is available and of reasonable quality, it improves the GGB estimation.
 However, these data are not often available.}
+
+\item{input_deaths_annual}{[\code{logical(1)}]\cr
+Whether input deaths are formatted as annual average recorded per year.
+Alternative is recorded deaths for the entire period between census 1
+and census 2. Default TRUE and assumes deaths are annual. If FALSE,
+deaths will be divided by the decimal number of years between 'date1' and
+'date2'.}
+
+\item{input_migrants_annual}{[\code{logical(1)}]\cr
+Whether input migrants are formatted as annual average recorded per year.
+Alternative is recorded net migrants for the entire period between census 1
+and census 2. Default TRUE and assumes net migrants are annual. If FALSE,
+migrants will be divided by the decimal number of years between 'date1' and
+'date2'.}
 }
 \value{
 [\code{list(2)}]\cr
@@ -56,12 +72,15 @@ Columns of \code{dt}:
 \itemize{
 \item 'pop1': age-specific population recorded at census 1
 \item 'pop2': age-specific population recorded at census 2
-\item 'deaths': average annual deaths recorded between census 1 and census 2
+\item 'deaths': average annual deaths recorded between census 1 and census 2,
+or, if 'input_deaths_annual' is FALSE, total deaths recorded between
+census 1 and census 2
 \item 'age_start': lower bound of age interval
 \item 'date1': date of first census, format yyyy-mm-dd
 \item 'date2': date of second census, format yyyy-mm-dd
 \item 'migrants' (optional): average annual net migrants between census 1 and
-census 2
+census 2, or, if 'input_migrants_annual' is FALSE, total net migrants
+recorded between census 1 and census 2
 }
 }
 \examples{
@@ -71,14 +90,14 @@ setnames(dt, "age", "age_start")
 id_cols <- c("location", "sex", "age_start")
 age_trim_lower = 5
 age_trim_upper = 85
-# convert from total to average annual deaths
-dt[, deaths := deaths / 5.353425]
 results <- ggb(
   dt,
   age_trim_lower = age_trim_lower,
   age_trim_upper = age_trim_upper,
   id_cols = id_cols,
-  migration = FALSE
+  migration = TRUE,
+  input_deaths_annual = FALSE,
+  input_migrants_annual = FALSE
 )
 
 }
