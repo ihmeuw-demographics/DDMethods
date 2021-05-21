@@ -11,6 +11,7 @@
 #'  \item{pop1}{\[`numeric()`\]\cr Age-specific population from census 1}
 #'  \item{pop2}{\[`numeric()`\]\cr Age-specific population from census 2}
 #'  \item{deaths}{\[`numeric()`\]\cr Age-specific deaths recorded in intercensal period}
+#'  \item{migrants}{\[`numeric()`\]\cr Age-specific net migration recorded in intercensal period}
 #'  \item{age}{\[`integer()`\]\cr Lower bound of 5-year age group}
 #'  \item{sex}{\[`integer()`\]\cr "male"}
 #'  \item{date1}{\[`numeric()`\]\cr Date of first census}

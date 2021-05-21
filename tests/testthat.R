@@ -1,4 +1,4 @@
 library(testthat)
-library(packageTemplate)
+library(DDMethods)
 
-test_check("packageTemplate")
+test_check("DDMethods")
