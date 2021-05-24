@@ -14,10 +14,6 @@
 #'   Column names that uniquely identify rows of `dt`.
 #'   Must include 'age_start' and 'sex'. When 'age_start' is removed, these
 #'   columns define the groups to calculate completeness for.
-#' @param migration \[`logical(1)`\]\cr
-#'   Whether a 'migrants' column should be used. If migration
-#'   is available and of reasonable quality, it improves the GGB estimation.
-#'   However, these data are not often available.
 #' @inheritParams ggb
 #'
 #' @return \[`list(2)`\]\cr

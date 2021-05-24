@@ -19,9 +19,8 @@
 #'   One column must be 'age_start'. When 'age_start' is removed, these
 #'   columns define the groups to calculate completeness for.
 #' @param migration \[`logical(1)`\]\cr
-#'   Whether a 'migrants' column should be used. Then, the balancing
-#'   equation is growth = entries - deaths + net migration. If migration
-#'   is available and of reasonable quality, it improves the GGB estimation.
+#'   Whether a 'migrants' column should be used. If migration
+#'   is available and of reasonable quality, it improves the DDM estimation.
 #'   However, these data are not often available.
 #' @param input_deaths_annual \[`logical(1)`\]\cr
 #'   Whether input deaths are formatted as annual average recorded per year.
@@ -166,7 +165,7 @@ ggb <- function(dt,
   dt_fit[, completeness := sqrt(k1 * k2) / slope]
 
   # format and return
-  output_vars <- c("slope", "intercept", "completeness")
+  output_vars <- c("slope", "intercept", "completeness", "k1_over_k2")
   dt_fit <- unique(dt_fit[, .SD, .SDcols = c(id_cols_no_age, output_vars)])
   results <- list(dt, dt_fit)
   return(results)

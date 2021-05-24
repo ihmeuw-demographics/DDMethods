@@ -32,9 +32,8 @@ One column must be 'age_start'. When 'age_start' is removed, these
 columns define the groups to calculate completeness for.}
 
 \item{migration}{[\code{logical(1)}]\cr
-Whether a 'migrants' column should be used. Then, the balancing
-equation is growth = entries - deaths + net migration. If migration
-is available and of reasonable quality, it improves the GGB estimation.
+Whether a 'migrants' column should be used. If migration
+is available and of reasonable quality, it improves the DDM estimation.
 However, these data are not often available.}
 
 \item{input_deaths_annual}{[\code{logical(1)}]\cr
