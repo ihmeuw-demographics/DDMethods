@@ -79,8 +79,30 @@ test_that("ggb plotting works", {
 # dt_tr <- copy(dt)
 # dt_tr[, cod := "South_Africa_male"]
 # setnames(dt_tr, "age_start", "age")
-# # no migration (gives us 0.940)
-# test <- DDM::ggb(dt_tr, exact.ages = seq(5, 80, 5), deaths.summed = T)
-# # with migration (gives us 0.914)
+# # no migration (gives us 0.933)
+# test <- DDM::ggb(
+#   dt_tr,
+#   exact.ages = seq(5, 80, 5),
+#   deaths.summed = T,
+#   lm.method = "oldschool"
+# )
+# # with migration (gives us 0.906)
 # setnames(dt_tr, "migrants", "mig")
-# test <- DDM::ggb(dt_tr, exact.ages = seq(5, 80, 5), deaths.summed = T)
+# test <- DDM::ggb(
+#   dt_tr,
+#   exact.ages = seq(5, 80, 5),
+#   deaths.summed = T,
+#   lm.method = "oldschool"
+# )
+#
+# # run our function w/o migration and with TR growth rate method
+# test <- ggb(
+#   dt,
+#   age_trim_lower = age_trim_lower,
+#   age_trim_upper = age_trim_upper,
+#   id_cols = id_cols,
+#   migration = F,
+#   input_deaths_annual = F,
+#   input_migrants_annual = F,
+#   method_growth_rate = "b"
+# )
