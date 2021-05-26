@@ -14,6 +14,14 @@
 #'   Column names that uniquely identify rows of `dt`.
 #'   Must include 'age_start' and 'sex'. When 'age_start' is removed, these
 #'   columns define the groups to calculate completeness for.
+#' @param method_numerator_denominator_type \[`character()`\]\cr
+#'   Completeness point estimates are population estimated from deaths
+#'   divided by population estimated from censuses. This setting dictates
+#'   the ages the population belongs to. Must be one of:
+#'   * "Nx" : numerator and denominator are both estimated population
+#'        aged x. This is the default and matches the GBD methodology.
+#'   * "nNx" : numerator and denominator are both estimated population
+#'        aged x to x+n. This matches Tim Riffe DDM package and IUSSP methods.
 #' @inheritParams ggb
 #'
 #' @return \[`list(2)`\]\cr
@@ -72,7 +80,8 @@ seg <- function(dt,
                 id_cols = c("age_start", "sex"),
                 migration = F,
                 input_deaths_annual = T,
-                input_migrants_annual = T) {
+                input_migrants_annual = T,
+                method_numerator_denominator_type = "Nx") {
 
   # Validate and setup ------------------------------------------------------
 
@@ -83,6 +92,10 @@ seg <- function(dt,
   checkmate::assert_true(age_trim_lower < age_trim_upper)
   checkmate::assert_character(id_cols)
   checkmate::assert_logical(migration, len = 1)
+  checkmate::assert_choice(
+    method_numerator_denominator_type,
+    choices = c("Nx", "nNx")
+  )
 
   # check columns
   check_vars <- c(id_cols, "pop1", "pop2", "deaths", "date1", "date2", "cd_region")
@@ -104,12 +117,15 @@ seg <- function(dt,
   if (!input_deaths_annual) dt[, deaths := deaths / t]
   if (migration & !input_migrants_annual) dt[, migrants := migrants / t]
 
+  # add age length
+  dt[, age_length := shift(age_start, 1, type = "lead") - age_start,
+     by = id_cols_no_age]
+
 
   # Compute components ------------------------------------------------------
 
-  # Denominator: population age a from censuses
-  # Approximate with birthdays age a
-  gen_bdays_age_a(dt, id_cols_no_age)
+  # Denominator: population from censuses
+  gen_pop_denominator(dt, id_cols_no_age, method_numerator_denominator_type)
 
   # Numerator: population age a from death registration
   # Estimation in short:
@@ -132,8 +148,8 @@ seg <- function(dt,
   # Life expectancy at open age interval
   dt <- gen_open_interval_life_expectancy(dt, id_cols_no_age)
 
-  # Population age a from synthetic cohort method
-  gen_pop_age_a_synthetic_cohort(dt, id_cols_no_age)
+  # Numerator: population from deaths via synthetic cohort method
+  gen_pop_numerator(dt, id_cols_no_age, method_numerator_denominator_type)
 
 
   # Synthesis --------------------------------------------------------------
@@ -142,7 +158,7 @@ seg <- function(dt,
   dt_fit <- dt[age_start >= age_trim_lower & age_start < age_trim_upper]
 
   # Get completeness
-  dt_fit[, completeness := pop_age_a_synthetic_cohort / bdays_age_a]
+  dt_fit[, completeness := pop_from_deaths / pop_from_censuses]
 
   # Get mean
   dt_fit <- dt_fit[
@@ -160,6 +176,25 @@ seg <- function(dt,
 
 
 # Helper functions --------------------------------------------------------
+
+# Denominator: population from censuses
+# Method = "Nx" : pop ~ birthdays age a
+# Method = "nNx" : pop ~ geometric mean of pop from census 1 and census 2
+gen_pop_denominator <- function(dt,
+                                id_cols_no_age,
+                                method_numerator_denominator_type) {
+
+  if (method_numerator_denominator_type == "Nx") {
+    gen_bdays_age_a(dt, id_cols_no_age)
+    setnames(dt, "bdays_age_a", "pop_from_censuses")
+
+  } else if (method_numerator_denominator_type == "nNx") {
+    dt[, pop_from_censuses := sqrt(pop1 * pop2)]
+
+  } else {
+    stop("'method_numerator_denominator_type' must be 'Nx' or 'nNx'.")
+  }
+}
 
 # Age-specific growth rate
 # (1 / t) * ln(N2(a) / N1(a)) - migrants / sqrt(pop1 * pop2)
@@ -258,10 +293,14 @@ gen_open_interval_life_expectancy <- function(dt, id_cols_no_age) {
 }
 
 
-# Population age a from synthetic cohort method
+# Numerator: Population from deaths via synthetic cohort method
 # N(a)open = deaths(a) * exp(ex * growth_rate) - [(ex * growth_rate)^2]/6
 # N(a) = N(a+n) * exp(n * growth_rate) + deaths(a) * exp(0.5 * n * growth_rate)
-gen_pop_age_a_synthetic_cohort <- function(dt, id_cols_no_age) {
+# Method = "Nx": Nx = N(a) as described
+# Method = "nNx": nNx = (N(a) + N(a+n)) * (n / 2)
+gen_pop_numerator <- function(dt,
+                              id_cols_no_age,
+                              method_numerator_denominator_type) {
 
   # start with open age interval
   dt[, open_age := max(age_start), by = id_cols_no_age]
@@ -273,10 +312,6 @@ gen_pop_age_a_synthetic_cohort <- function(dt, id_cols_no_age) {
 
   # helper function to grab n-th largest value from vector
   nth_largest <- function(x, n) return(max(sort(x)[1:(length(x) - n + 1)]))
-
-  # add age length
-  dt[, age_length := shift(age_start, 1, type = "lead") - age_start,
-     by = id_cols_no_age]
 
   # recursively compute age groups going from older to younger
   for (i in 2:length(unique(dt$age_start))) {
@@ -294,6 +329,19 @@ gen_pop_age_a_synthetic_cohort <- function(dt, id_cols_no_age) {
     ]
   }
   dt[, pop_age_a_synthetic_cohort_i := NULL]
+
+  # set 'pop_from_deaths' based on numerator & denominator type chosen
+  if (method_numerator_denominator_type == "Nx") {
+    dt[, pop_from_deaths := pop_age_a_synthetic_cohort]
+  } else if (method_numerator_denominator_type == "nNx") {
+    dt[, pop_from_deaths :=
+         (pop_age_a_synthetic_cohort +
+            shift(pop_age_a_synthetic_cohort, type = "lead")) *
+         (age_length / 2),
+       by = id_cols_no_age]
+  } else {
+    stop("'method_numerator_denominator_type' must be 'Nx' or 'nNx'.")
+  }
 
 }
 
