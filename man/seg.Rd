@@ -11,7 +11,8 @@ seg(
   id_cols = c("age_start", "sex"),
   migration = F,
   input_deaths_annual = T,
-  input_migrants_annual = T
+  input_migrants_annual = T,
+  method_numerator_denominator_type = "Nx"
 )
 }
 \arguments{
@@ -49,6 +50,17 @@ Alternative is recorded net migrants for the entire period between census 1
 and census 2. Default TRUE and assumes net migrants are annual. If FALSE,
 migrants will be divided by the decimal number of years between 'date1' and
 'date2'.}
+
+\item{method_numerator_denominator_type}{[\code{character()}]\cr
+Completeness point estimates are population estimated from deaths
+divided by population estimated from censuses. This setting dictates
+the ages the population belongs to. Must be one of:
+\itemize{
+\item "Nx" : numerator and denominator are both estimated population
+aged x. This is the default and matches the GBD methodology.
+\item "nNx" : numerator and denominator are both estimated population
+aged x to x+n. This matches Tim Riffe DDM package and IUSSP methods.
+}}
 }
 \value{
 [\code{list(2)}]\cr

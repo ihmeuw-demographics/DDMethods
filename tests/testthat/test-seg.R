@@ -58,6 +58,19 @@ test_that("seg without migration works", {
 # setnames(dt_tr, "age_start", "age")
 # # no migration (gives us 1.079)
 # test <- DDM::seg(dt_tr, exact.ages = seq(25, 60, 5), deaths.summed = T)
-# # with migration (gives us 1.026)
-# setnames(dt_tr, "migrants", "mig")
-# test <- DDM::seg(dt_tr, exact.ages = seq(25, 60, 5), deaths.summed = T)
+# # # with migration (gives us 1.026)
+# # setnames(dt_tr, "migrants", "mig")
+# # test <- DDM::seg(dt_tr, exact.ages = seq(25, 60, 5), deaths.summed = T)
+#
+# # test our code with TR numerator denominator type
+# test <- seg(
+#   dt,
+#   age_trim_lower = age_trim_lower,
+#   age_trim_upper = age_trim_upper,
+#   id_cols = id_cols,
+#   migration = F,
+#   input_deaths_annual = F,
+#   input_migrants_annual = F,
+#   method_numerator_denominator_type = "nNx"
+# )
+
