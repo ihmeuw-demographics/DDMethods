@@ -21,6 +21,7 @@
 #'   age-trim: upper bound of 'age_start' included for SEG (exclusive).
 #'   defaults to be the same as GGB upper age trim.
 #' @inheritParams seg
+#' @inheritParams ggb
 #'
 #' @return \[`list(2)`\]\cr
 #'   * \[`data.table()`\] Input `dt` returned with additional variables
@@ -74,7 +75,9 @@ ggbseg <- function(dt,
                    id_cols = c("age_start", "sex"),
                    migration = F,
                    input_deaths_annual = T,
-                   input_migrants_annual = T) {
+                   input_migrants_annual = T,
+                   method_growth_rate = "hyc",
+                   method_numerator_denominator_type = "Nx") {
 
   # Validate and setup ------------------------------------------------------
 
@@ -88,6 +91,11 @@ ggbseg <- function(dt,
   checkmate::assert_true(age_trim_lower_seg < age_trim_upper_seg)
   checkmate::assert_character(id_cols)
   checkmate::assert_logical(migration, len = 1)
+  checkmate::assert_choice(method_growth_rate, choices = c("hyc", "tr_iussp"))
+  checkmate::assert_choice(
+    method_numerator_denominator_type,
+    choices = c("Nx", "nNx")
+  )
 
   # check columns
   check_vars <- c(id_cols, "pop1", "pop2", "deaths", "date1", "date2")
@@ -101,7 +109,7 @@ ggbseg <- function(dt,
   # light prep
   dt <- copy(dt)
   id_cols_no_age <- setdiff(id_cols, "age_start")
-  setorderv(dt, c(id_cols, "age_start"))
+  setorderv(dt, c(id_cols_no_age, "age_start"))
 
   # convert to annualized deaths and net migrants
   dt[, t := as.numeric(difftime(date2, date1, units = "days")) / 365]
@@ -119,7 +127,8 @@ ggbseg <- function(dt,
     id_cols = id_cols,
     migration = migration,
     input_deaths_annual = TRUE,
-    input_migrants_annual = TRUE
+    input_migrants_annual = TRUE,
+    method_growth_rate = method_growth_rate
   )[[2]]
 
   dt <- merge(
@@ -142,7 +151,8 @@ ggbseg <- function(dt,
     id_cols = id_cols,
     migration = migration,
     input_deaths_annual = TRUE,
-    input_migrants_annual = TRUE
+    input_migrants_annual = TRUE,
+    method_numerator_denominator_type = method_numerator_denominator_type
   )
 
   # for record keeping, change column names a bit
