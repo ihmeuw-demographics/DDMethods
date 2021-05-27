@@ -36,9 +36,9 @@
 #'   'date2'.
 #' @param method_growth_rate \[`character(1)`\]\cr
 #'   Method to use for computation of growth rate. One of:
-#'   * "a": Equation 8c from Hill, You, Choi (2009).
+#'   * "hyc": Equation 8c from Hill, You, Choi (2009).
 #'       \eqn{r(a+) = (1 / t) * ln(N2(a+) / N1(a+))}.
-#'   * "b": Equation from IUSSP website and Tim Riffe DDM package.
+#'   * "tr_iussp": Equation from IUSSP website and Tim Riffe DDM package.
 #'       \eqn{r(a+) = (1 / t) * (N2(a+) - N1(a+)) / (exp((log(N1(a+)) +
 #'        log(N2(a+))) / 2))}.
 #'
@@ -65,11 +65,29 @@
 #'
 #' @references
 #' Methods are based on the following sources:
-#' * http://demographicestimation.iussp.org/content/generalized-growth-balance-method
+#' * Bennett NG, Horiuchi S. Mortality estimation from registered deaths in
+#'   less developed countries. Demography. 1984 May;21(2):217-33.
+#' * Dorrington RE. 2013. "The Generalized Growth Balance Method".
+#'   In Moultrie TA, RE Dorrington, AG Hill, K Hill, IM Timæus and B Zaba (eds).
+#'   Tools for Demographic Estimation. Paris: International Union for the
+#'   Scientific Study of Population.
+#'   http://demographicestimation.iussp.org/content/generalized-growth-balance-method.
+#'   Accessed May 27 2021.
+#' * Dorrington RE. 2013. "Synthetic extinct generations methods".
+#'   In Moultrie TA, RE Dorrington, AG Hill, K Hill, IM Timæus and B Zaba (eds).
+#'   Tools for Demographic Estimation. Paris: International Union for the S
+#'   Scientific Study of Population.
+#'   http://demographicestimation.iussp.org/content/synthetic-extinct-generations-methods.
+#'   Accessed May 27 2021.
 #' * Hill K, You D, Choi Y. Death distribution methods for estimating adult
 #'   mortality: sensitivity analysis with simulated data errors. Demographic
 #'   Research. 2009 Jul 1;21:235-54.
-#'   (https://www.demographic-research.org/volumes/vol21/9/default.htm)
+#' * Murray CJ, Rajaratnam JK, Marcus J, Laakso T, Lopez AD. What can we
+#'   conclude from death registration? Improved methods for evaluating
+#'   completeness. PLoS Med. 2010 Apr 13;7(4):e1000262.
+#' * Tim Riffe, Everton Lima, and Bernardo Queiroz (2017). DDM: Death
+#'   Registration Coverage Estimation. R package version 1.0.0.
+#'   https://CRAN.R-project.org/package=DDM
 #'
 #' @examples
 #' library(data.table)
@@ -90,13 +108,13 @@
 #' @export
 
 ggb <- function(dt,
-                age_trim_lower = 15,
-                age_trim_upper = 65,
+                age_trim_lower = 5,
+                age_trim_upper = 75,
                 id_cols = "age_start",
                 migration = F,
                 input_deaths_annual = T,
                 input_migrants_annual = T,
-                method_growth_rate = "a") {
+                method_growth_rate = "hyc") {
 
   # Validate and setup ------------------------------------------------------
 
@@ -109,7 +127,7 @@ ggb <- function(dt,
   checkmate::assert_logical(migration, len = 1)
   checkmate::assert_logical(input_deaths_annual, len = 1)
   checkmate::assert_logical(input_migrants_annual, len = 1)
-  checkmate::assert_choice(method_growth_rate, choices = c("a", "b"))
+  checkmate::assert_choice(method_growth_rate, choices = c("hyc", "tr_iussp"))
 
   # check columns
   check_vars <- c(id_cols, "pop1", "pop2", "deaths", "date1", "date2")
@@ -123,7 +141,7 @@ ggb <- function(dt,
   # light prep
   dt <- copy(dt)
   id_cols_no_age <- setdiff(id_cols, "age_start")
-  setorderv(dt, c(id_cols, "age_start"))
+  setorderv(dt, c(id_cols_no_age, "age_start"))
 
   # convert to annualized deaths and net migrants
   dt[, t := as.numeric(difftime(date2, date1, units = "days")) / 365]
