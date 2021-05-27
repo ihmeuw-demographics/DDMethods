@@ -11,7 +11,8 @@ ggb(
   id_cols = "age_start",
   migration = F,
   input_deaths_annual = T,
-  input_migrants_annual = T
+  input_migrants_annual = T,
+  method_growth_rate = "a"
 )
 }
 \arguments{
@@ -49,6 +50,16 @@ Alternative is recorded net migrants for the entire period between census 1
 and census 2. Default TRUE and assumes net migrants are annual. If FALSE,
 migrants will be divided by the decimal number of years between 'date1' and
 'date2'.}
+
+\item{method_growth_rate}{[\code{character(1)}]\cr
+Method to use for computation of growth rate. One of:
+\itemize{
+\item "a": Equation 8c from Hill, You, Choi (2009).
+\eqn{r(a+) = (1 / t) * ln(N2(a+) / N1(a+))}.
+\item "b": Equation from IUSSP website and Tim Riffe DDM package.
+\eqn{r(a+) = (1 / t) * (N2(a+) - N1(a+)) / (exp((log(N1(a+)) +
+       log(N2(a+))) / 2))}.
+}}
 }
 \value{
 [\code{list(2)}]\cr
