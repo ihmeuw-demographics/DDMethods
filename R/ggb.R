@@ -116,6 +116,10 @@ ggb <- function(dt,
   if (migration) check_vars <- c(check_vars, "migrants")
   checkmate::assert_names(names(dt), must.include = check_vars)
 
+  # convert lingering integers to doubles
+  dt[, c("pop1", "pop2", "deaths") := lapply(.SD, as.double),
+     .SDcols = c("pop1", "pop2", "deaths")]
+
   # check ID cols
   checkmate::assert_names(id_cols, must.include = "age_start")
   demUtils::assert_is_unique_dt(dt, id_cols)

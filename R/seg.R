@@ -102,6 +102,11 @@ seg <- function(dt,
   if (migration) check_vars <- c(check_vars, "migrants")
   checkmate::assert_names(names(dt), must.include = check_vars)
   checkmate::assert_character(dt$cd_region, pattern = "north|south|west|east")
+  checkmate::assert_character(dt$sex, pattern = "male|female|all")
+
+  # convert lingering integers to doubles
+  dt[, c("pop1", "pop2", "deaths") := lapply(.SD, as.double),
+     .SDcols = c("pop1", "pop2", "deaths")]
 
   # check ID cols
   checkmate::assert_names(id_cols, must.include = c("age_start", "sex"))
@@ -323,12 +328,13 @@ gen_pop_numerator <- function(dt,
         deaths * exp(0.5 * age_length * growth_rate),
       by = id_cols_no_age
     ]
+    dt[, ith_largest := nth_largest(age_start, i), by = id_cols_no_age]
     dt[
-      age_start == nth_largest(age_start, i),
+      age_start == ith_largest,
       pop_age_a_synthetic_cohort := pop_age_a_synthetic_cohort_i
     ]
   }
-  dt[, pop_age_a_synthetic_cohort_i := NULL]
+  dt[, c("pop_age_a_synthetic_cohort_i", "ith_largest") := NULL]
 
   # set 'pop_from_deaths' based on numerator & denominator type chosen
   if (method_numerator_denominator_type == "Nx") {
