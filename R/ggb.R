@@ -75,7 +75,7 @@
 #'   Accessed May 27 2021.
 #' * Dorrington RE. 2013. "Synthetic extinct generations methods".
 #'   In Moultrie TA, RE Dorrington, AG Hill, K Hill, IM Timæus and B Zaba (eds).
-#'   Tools for Demographic Estimation. Paris: International Union for the S
+#'   Tools for Demographic Estimation. Paris: International Union for the
 #'   Scientific Study of Population.
 #'   http://demographicestimation.iussp.org/content/synthetic-extinct-generations-methods.
 #'   Accessed May 27 2021.
