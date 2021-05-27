@@ -8,10 +8,10 @@ download.file(url = file, destfile = tmp, mode = "wb")
 dt <- readxl::read_excel(tmp, sheet = 3, range = "B6:F25")
 
 # format
-names(dt) <- c("age", "pop1", "pop2", "deaths", "migrants")
+names(dt) <- c("age_start", "pop1", "pop2", "deaths", "migrants")
 dt <- setDT(dt)
 dt <- dt[!1] # remove unneeded 1st row
-dt[18, age := 85]
+dt[18, age_start := 85]
 dt[, `:=` (
   sex = "male",
   location = "South Africa",
@@ -19,7 +19,7 @@ dt[, `:=` (
   date2 = lubridate::ymd("2007-02-15")
 )]
 dt <- dt[, .SD, .SDcols = c("location", "pop1", "pop2", "deaths", "migrants",
-                            "age", "sex", "date1", "date2")]
+                            "age_start", "sex", "date1", "date2")]
 zaf_2001_2007 <- copy(dt)
 
 # save

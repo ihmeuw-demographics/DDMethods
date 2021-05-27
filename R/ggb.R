@@ -19,9 +19,8 @@
 #'   One column must be 'age_start'. When 'age_start' is removed, these
 #'   columns define the groups to calculate completeness for.
 #' @param migration \[`logical(1)`\]\cr
-#'   Whether a 'migrants' column should be used. Then, the balancing
-#'   equation is growth = entries - deaths + net migration. If migration
-#'   is available and of reasonable quality, it improves the GGB estimation.
+#'   Whether a 'migrants' column should be used. If migration
+#'   is available and of reasonable quality, it improves the DDM estimation.
 #'   However, these data are not often available.
 #' @param input_deaths_annual \[`logical(1)`\]\cr
 #'   Whether input deaths are formatted as annual average recorded per year.
@@ -35,6 +34,13 @@
 #'   and census 2. Default TRUE and assumes net migrants are annual. If FALSE,
 #'   migrants will be divided by the decimal number of years between 'date1' and
 #'   'date2'.
+#' @param method_growth_rate \[`character(1)`\]\cr
+#'   Method to use for computation of growth rate. One of:
+#'   * "a": Equation 8c from Hill, You, Choi (2009).
+#'       \eqn{r(a+) = (1 / t) * ln(N2(a+) / N1(a+))}.
+#'   * "b": Equation from IUSSP website and Tim Riffe DDM package.
+#'       \eqn{r(a+) = (1 / t) * (N2(a+) - N1(a+)) / (exp((log(N1(a+)) +
+#'        log(N2(a+))) / 2))}.
 #'
 #' @return \[`list(2)`\]\cr
 #'   * \[`data.table()`\] Input `dt` returned with additional variables
@@ -68,7 +74,6 @@
 #' @examples
 #' library(data.table)
 #' dt <- copy(zaf_2001_2007)
-#' setnames(dt, "age", "age_start")
 #' id_cols <- c("location", "sex", "age_start")
 #' age_trim_lower = 5
 #' age_trim_upper = 85
@@ -90,7 +95,8 @@ ggb <- function(dt,
                 id_cols = "age_start",
                 migration = F,
                 input_deaths_annual = T,
-                input_migrants_annual = T) {
+                input_migrants_annual = T,
+                method_growth_rate = "a") {
 
   # Validate and setup ------------------------------------------------------
 
@@ -101,6 +107,9 @@ ggb <- function(dt,
   checkmate::assert_true(age_trim_lower < age_trim_upper)
   checkmate::assert_character(id_cols)
   checkmate::assert_logical(migration, len = 1)
+  checkmate::assert_logical(input_deaths_annual, len = 1)
+  checkmate::assert_logical(input_migrants_annual, len = 1)
+  checkmate::assert_choice(method_growth_rate, choices = c("a", "b"))
 
   # check columns
   check_vars <- c(id_cols, "pop1", "pop2", "deaths", "date1", "date2")
@@ -130,7 +139,7 @@ ggb <- function(dt,
   dt[, entry_rate := bdays_age_a / pop_age_aplus]
 
   # Growth rate
-  gen_growth_rate(dt, id_cols_no_age)
+  gen_growth_rate(dt, id_cols_no_age, method = method_growth_rate)
 
   # Death rate: based on observed deaths not complete deaths
   gen_death_rate(dt, id_cols_no_age)
@@ -151,10 +160,11 @@ ggb <- function(dt,
   dt_fit <- dt[age_start >= age_trim_lower & age_start < age_trim_upper]
 
   # Orthogonal regression: entry - growth = k + 1/c * death
+  # equivalent to Tim Riffe DDM package "oldschool" method
   dt_fit[, slope := stats::sd(entry_minus_growth) / stats::sd(death_rate),
          by = id_cols_no_age]
   dt_fit[, intercept := mean(entry_minus_growth) - mean(death_rate) * slope,
-     by = id_cols_no_age]
+         by = id_cols_no_age]
 
   # relative completeness of census 1 compared to census 2
   dt_fit[, k1_over_k2 := exp(t * intercept)]
@@ -167,7 +177,7 @@ ggb <- function(dt,
   dt_fit[, completeness := sqrt(k1 * k2) / slope]
 
   # format and return
-  output_vars <- c("slope", "intercept", "completeness")
+  output_vars <- c("slope", "intercept", "completeness", "k1_over_k2")
   dt_fit <- unique(dt_fit[, .SD, .SDcols = c(id_cols_no_age, output_vars)])
   results <- list(dt, dt_fit)
   return(results)
@@ -200,10 +210,21 @@ gen_pop_age_aplus <- function(dt, id_cols_no_age) {
 }
 
 # Growth rate
-# (1 / t) * ln(N2(a+) / N1(a+))
-gen_growth_rate <- function(dt, id_cols_no_age) {
-  dt[, growth_rate := (1 / t) * log(sum_aplus(pop2) / sum_aplus(pop1)),
-     by = id_cols_no_age]
+# Method A: (1 / t) * ln(N2(a+) / N1(a+))
+# Method B: (1 / t) * (N2(a+) - N1(a+)) / (exp((ln(N1(a+)) + ln(N2(a+))) / 2))
+gen_growth_rate <- function(dt, id_cols_no_age, method = "a") {
+  if (method == "a") {
+    # equation 8c in Hill, You, Choi (2009)
+    dt[, growth_rate := (1 / t) * log(sum_aplus(pop2) / sum_aplus(pop1)),
+       by = id_cols_no_age]
+  } else if (method == "b") {
+    # equation from IUSSP & Tim Riffe DDM package
+    dt[, growth_rate := (1 / t) * (sum_aplus(pop2) - sum_aplus(pop1)) /
+         (exp((log(sum_aplus(pop1)) + log(sum_aplus(pop2))) / 2)),
+       by = id_cols_no_age]
+  } else {
+    stop("'gen_growth_rate' argument 'method' must be 'a' or 'b'.")
+  }
 }
 
 # Death rate
