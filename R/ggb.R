@@ -230,18 +230,18 @@ gen_pop_age_aplus <- function(dt, id_cols_no_age) {
 # Growth rate
 # Method A: (1 / t) * ln(N2(a+) / N1(a+))
 # Method B: (1 / t) * (N2(a+) - N1(a+)) / (exp((ln(N1(a+)) + ln(N2(a+))) / 2))
-gen_growth_rate <- function(dt, id_cols_no_age, method = "a") {
-  if (method == "a") {
+gen_growth_rate <- function(dt, id_cols_no_age, method = "hyc") {
+  if (method == "hyc") {
     # equation 8c in Hill, You, Choi (2009)
     dt[, growth_rate := (1 / t) * log(sum_aplus(pop2) / sum_aplus(pop1)),
        by = id_cols_no_age]
-  } else if (method == "b") {
+  } else if (method == "tr_iussp") {
     # equation from IUSSP & Tim Riffe DDM package
     dt[, growth_rate := (1 / t) * (sum_aplus(pop2) - sum_aplus(pop1)) /
          (exp((log(sum_aplus(pop1)) + log(sum_aplus(pop2))) / 2)),
        by = id_cols_no_age]
   } else {
-    stop("'gen_growth_rate' argument 'method' must be 'a' or 'b'.")
+    stop("Method must be 'hyc' or 'tr_iussp'.")
   }
 }
 
