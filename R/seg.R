@@ -151,7 +151,7 @@ seg <- function(dt,
   gen_ratio_30d10_20d40(dt, id_cols_no_age)
 
   # Life expectancy at open age interval
-  dt <- gen_open_interval_life_expectancy(dt, id_cols_no_age)
+  gen_open_interval_life_expectancy(dt)
 
   # Numerator: population from deaths via synthetic cohort method
   gen_pop_numerator(dt, id_cols_no_age, method_numerator_denominator_type)
@@ -247,51 +247,33 @@ gen_ratio_30d10_20d40 <- function(dt, id_cols_no_age) {
 
 
 # Life expectancy at open age interval
-gen_open_interval_life_expectancy <- function(dt, id_cols_no_age) {
+gen_open_interval_life_expectancy <- function(dt) {
 
-  # prep coale-demeny life tables
-  cd <- copy(coale_demeny_ex)
-  cd_id_cols <- c("cd_region", "sex", "index", "age_start")
-  setnames(cd, c("ex", "ratio_30d10_20d40"), c("ex_1", "ratio_30d10_20d40_1"))
-  cd[, ex_2 := shift(ex_1, type = "lead"), by = setdiff(cd_id_cols, "index")]
-  cd[, ratio_30d10_20d40_2 := shift(ratio_30d10_20d40_1, type = "lead"),
-     by = setdiff(cd_id_cols, "index")]
-
-  # need to make a copy of r1 and r2 because the following conditional join
-  # sets them equal to ratio_30d10_20d40
-  cd[, `:=` (r1 = ratio_30d10_20d40_1, r2 = ratio_30d10_20d40_2)]
-
-  # subset data to open age intervals
-  dt[, open_age := max(age_start), by = id_cols_no_age]
-  dt_open <- dt[age_start == max(age_start)]
-
-  # conditional join to match level on ratio 30d10/20d40
-  dt_open <- cd[
-    dt_open,
-    on = list(
-      cd_region, sex, age_start,
-      r1 >= ratio_30d10_20d40, r2 < ratio_30d10_20d40
+  # create function which will linearly interpolate CD life tables to
+  #  get life expectancy from ratio 30d10 to 20d40
+  r_to_ex <- function(r, ss, aa, cdr) {
+    f <- stats::approxfun(
+      x = coale_demeny_ex[sex == ss & age_start == aa & cd_region == cdr]$ratio_30d10_20d40,
+      y = coale_demeny_ex[sex == ss & age_start == aa & cd_region == cdr]$ex,
+      method = "linear",
+      rule = 2 # constant extrapolation from the ends
     )
-  ]
-  dt_open <- dt_open[, .SD,
-    .SDcols = c(id_cols_no_age, "age_start", "ex_1", "ex_2",
-                "ratio_30d10_20d40_1", "ratio_30d10_20d40_2")
-  ]
+    ex <- f(r)
+    return(ex)
+  }
 
-  # merge back onto input data.table
-  # TODO: modify in place
-  dt <- merge(
-    dt, dt_open,
-    by = c(id_cols_no_age, "age_start"),
-    all.x = T
-  )
+  # apply function over all ID columns of CD life tables (region, sex, age)
+  for (cdr in c("west", "east", "north", "south")) {
+    for (ss in c("male", "female", "all")) {
+      for (aa in unique(dt$age_start)) {
+        dt[sex == ss & age_start == aa & cd_region == cdr,
+           ex := r_to_ex(ratio_30d10_20d40, ss, aa, cdr)]
+      }
+    }
+  }
 
-  # interpolate life expectancy between two levels
-  dt[, ex := ex_1 + (ratio_30d10_20d40_1 - ratio_30d10_20d40) /
-       (ratio_30d10_20d40_1 - ratio_30d10_20d40_2) * (ex_2 - ex_1)]
-
-  # remove extra columns
-  dt[, c("ratio_30d10_20d40_1", "ratio_30d10_20d40_2", "ex_1", "ex_2") := NULL]
+  # check for missingness
+  checkmate::assert_numeric(dt$ex, any.missing = F)
 
   return(dt)
 
