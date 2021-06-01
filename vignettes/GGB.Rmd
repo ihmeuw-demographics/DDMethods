@@ -1,0 +1,271 @@
+---
+title: "GGB"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{GGB}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(DDMethods)
+library(data.table)
+```
+
+## General Growth Balance (GGB)
+
+This vignette describes the methods for the General Growth Balance Death Distribution Method (DDM) for estimating completeness of death registration.
+These methods are not original to this package, but are summarized here.
+For original sources, see the references section of this vignette.
+
+## Input data
+
+Input data required for GGB is:
+
+- Age-specific population counts from two censuses (recommended < 20 years apart)
+- Age-specific death counts from death registration in between the two censuses
+
+Age-specific death counts can come from one or many years of death registration, but should be converted to average annual counts.
+
+This package includes an example dataset, which matches the [example used but the IUSSP](http://demographicestimation.iussp.org/content/generalized-growth-balance-method).
+
+The example dataset is for South African males, between 2001 and 2007:
+
+```{r zaf_data}
+head(zaf_2001_2007)
+```
+
+As-is, these data are for total deaths in the interval, so we need to divide deaths by the time between censuses in years.
+Note that in the `ggb` function, this happens internally, via the `input_deaths_annual` argument.
+
+```{r zaf_annual}
+# convert to average annual values
+dt <- copy(zaf_2001_2007)
+dt[, t := as.numeric(difftime(date2, date1, units = "days")) / 365]
+dt[, deaths := deaths / t]
+dt[, migrants := migrants / t]
+```
+
+## The Demographic Balancing Equation
+
+At the core of the GGB method is the demographics balancing equation,
+which says that in a stable population (constant birth rate and age-specific mortality rate over time),
+population growth rate ($r$) is equal to birth rate ($b$) minus death rate ($d$) plus migration rate ($m$).
+In a closed population, this simplifies to: $r = b - d$.
+
+This base form of the demographic balancing equation looks at all ages and uses birth rate as the entry rate into the population.
+But, we can think of an analogous format for any age $a$,
+where "births" become birthdays at age $a$ and the population of interest is the population aged $a+$.
+Then, $r(a+) = b(a+) - d(a+)$.
+
+From two censuses, we can approximate $r(a+)$ and $b(a+)$ for a collection of ages $a$.
+True death rate, $d(a+)$, itself is a function of observed death count, observed population counts, death registration completeness, and census coverage.
+We leverage these relationships, along with orthogonal regression to summarize across ages, to estimate completeness.
+The following sections will describe each component in more detail.
+
+## A bit on notation
+
+As described, we notate $r(a+)$, $b(a+)$, $d(a+)$, and $m(a+)$ to be the growth, birth (or entry), death, and migration rates in the population aged $a$ and over.
+
+Additionally:
+
+- $n$ : length of age interval in data
+- $N1$ : population at census 1
+- $N2$ : population at census 2
+- $N$ : mean population between census 1 and census 2
+- $D$ : average annual deaths recorded between censuses
+
+And we use traditional demographic notation where ${_nZ_x}$ stands for some demographic measure, $Z$, for the age interval $x$ to $x+n$.
+
+## Entry rate, b(a+)
+
+We can estimate the entry rate into the population age $a+$ such that:
+$$b(a+) = \frac{\text{birthdays aged } a}{N(a+)}$$
+Where average annual birthdays aged $a$ is approximated as the geometric mean of ${_nN1_{a-n}}$ and ${_nN2_a}$ divided by the length of the age interval ($n$):
+$$\text{birthdays aged } a = \frac{1}{n}\sqrt{{_nN1_{a-n}} \cdot {_nN2_a}}$$
+And $N(a+)$ is approximated as the geometric mean of $N1(a+)$ and $N2(a+)$:
+$$N(a+) = \sqrt{N1(a+) \cdot N2(a+)}$$
+Note that if we assume census coverage is the same for all age groups, coverage does not impact this entry rate term.
+This is because a coverage scalar applied to $N1$ and $N2$ would cancel in the numerator and denominator when we divide birthdays by $N(a+)$.
+
+On our example dataset, we get:
+
+```{r entry, echo=F}
+results <- ggb(
+  dt,
+  age_trim_lower = 5,
+  age_trim_upper = 85,
+  id_cols = c("location", "sex", "age_start"),
+  migration = FALSE,
+  input_deaths_annual = TRUE,
+  input_migrants_annual = TRUE
+)
+dt <- results[[1]]
+base_cols <- c("age_start", "pop1", "pop2", "deaths")
+print(dt[, .SD, .SDcols = c(base_cols, "bdays_age_a", "pop_age_aplus", "entry_rate")])
+```
+
+
+## Growth rate, r(a+)
+
+The growth rate can be approximated as:
+
+$$r(a+) = \frac{1}{t} \text{ln} \Bigg(\frac{N2(a+)}{N1(a+)}\Bigg)$$
+Alternatively, it can be approximated as:
+
+$$r(a+) = \frac{1}{t} \cdot \frac{N2(a+) - N1(a+)} {N(a+)}$$
+with $N(a+)$ computed as it is described above.
+
+The first method for estimating growth rate comes from Hill, You, and Choi (2009).
+The second is used by IUSSP and [Tim Riffe's DDM package](https://github.com/timriffe/AdultCoverage/tree/master/AdultCoverage/R/DDM).
+
+Now, consider the case where census 1 and census 2 have coverage $k1$ and $k2$ such that true populations are $\frac{N1(a+)}{k1}$ and $\frac{N2(a+)}{k2}$.
+Coverage is assumed to be the same for all age groups.
+Let $r(a+)$ be growth rate as estimated in the first equation above, and
+let $r(a+)'$ be growth rate that incorporates $k1$ and $k2$.
+Using the first growth equation, we get:
+$$r(a+)' = \frac{1}{t} \text{ln} \Bigg(\frac{N2(a+) / k2}{N1(a+) / k1}\Bigg)$$
+when we apply coverage scalars to the observed $N$ values.
+
+With some algebra, we can get:
+
+$$ \implies r(a+)' = \frac{1}{t} \Bigg( \text{ln} \Bigg(\frac{N2(a+)}{N1(a+)} \Bigg) + \text{ln}\Big(\frac{k1}{k2} \Big)\Bigg) $$
+$$ \implies r(a+)' = r(a+) + \delta \text{ where } \delta = \frac{1}{t}\text{ln}\big(\frac{k1}{k2}\big)$$
+and we can think of $\delta$ here as the error in growth rate when estimated using $N2(a+)$ and $N1(a+)$.
+We will use this $\delta$ later in the demographic balancing equation.
+
+In our example dataset, we find growth rate ($r(a+)$) to be:
+
+```{r growth, echo=F}
+print(dt[, .SD, .SDcols = c(base_cols, "growth_rate")])
+```
+
+## Death rate, d(a+)
+
+Given that death rate is by definition deaths over person-years, we can get an incomplete death rate as follows:
+
+$$d(a+) = \frac{D(a+)}{N(a+)}$$
+
+where the numerator is deaths from the data and the denominator is population as estimated above.
+
+Assuming constant completeness over age, deaths become $\frac{D(a+)}{c}$ where $c$ is death registration completeness.
+Additionally, the denominator $N(a+)$ is estimated from the two censuses and may be biased if one census has higher coverage.
+
+To estimate this bias from censuses, we'll go back to how we estimated $N(a+)$,
+apply $k1$ and $k2$ scalars to census 1 and census 2,
+and see how that modifies our population estimate.
+Let $N(a+)'$ be a version of population that accounts for $k1$ and $k2$ and $N(a+)$ remain population as estimated above.
+So:
+
+$$N(a+)' = \sqrt{\frac{N1(a+) \cdot N2(a+)}{k1 \cdot k2}}$$
+
+$$ \implies N(a+)' = \Big(\sqrt{N1(a+) \cdot N2(a+)} \Big) \Big(\sqrt{\frac{1}{k1 \cdot k2}} \Big)$$
+
+$$ \implies N(a+)' = N(a+) \cdot \frac{1}{\sqrt{k1 \cdot k2}}$$
+
+Next, go back to the formulation of $d(a+)$.
+Substitute $\frac{D(a+)}{c}$ for the numerator and substitute $N(a+)'$ for $N(a+)$ in the denominator.
+Doing this, we get:
+
+$$d(a+) = \frac{\frac{D(a+)}{c}}{\frac{N(a+)}{(k1 \cdot k2) ^ \frac{1}{2}}}$$
+
+$$ \implies d(a+) = \frac{(k1 \cdot k2) ^ \frac{1}{2}}{c} \cdot \frac{D(a+)}{N(a+)}$$
+
+## Regression to estimate completeness
+
+Putting this together by using the balancing equation, and error components for growth rate and death rate as described, we can evaluate:
+
+$$b(a+) - r(a+) = d(a+)$$
+$$\implies b(a+) - \Big[r(a+) + \delta \Big] = \frac{(k1 \cdot k2) ^ \frac{1}{2}}{c} \cdot \frac{D(a+)}{N(a+)}$$
+
+$$ \implies b(a+) - r(a+) = \text{ intercept } + \text{ slope } \cdot \frac{D(a+)}{N(a+)}$$
+
+Where:
+
+$$\text{intercept } = \delta = \frac{1}{t} \text{ln} \Big(\frac{k1}{k2} \Big)$$
+
+$$\text{slope } = \frac{(k1 \cdot k2)^\frac{1}{2}}{c}$$
+At this point, the intercept and slope are the only unknowns, so this is a system we know how to solve.
+We use all values of $a$ within a chosen range ("age trim"), combined with orthogonal regression, to estimate slope and intercept.
+Orthogonal regression for $y \sim x$ has an analytical solution as follows:
+
+$$\text{slope } = \frac{\text{sd}(y)}{\text{sd}(x)}$$
+
+$$\text{intercept } = \text{mean}(y) - \text{mean}(x) \cdot \text{ slope }$$
+Then, solve for completeness using slope, intercept, and the relationships above, as follows:
+
+1. Solve for relative census coverage:
+$$\text{intercept } = \frac{1}{t} \text{ln} \Big(\frac{k1}{k2} \Big)$$
+$$\implies {\frac{k1}{k2} = \text{exp}(\text{intercept} \cdot t)}$$
+
+2. Use $\frac{k1}{k2}$ to select $k1$ and $k2$ assuming the more complete census is 100% complete
+3. Then: $$c = \frac{(k1 \cdot k2)^\frac{1}{2}}{\text{slope}}$$
+
+## Using this package for GGB
+
+To use this package for GGB, use the `ggb` function:
+
+```{r example}
+results <- ggb(
+  dt,
+  age_trim_lower = 5,
+  age_trim_upper = 85,
+  id_cols = c("location", "sex", "age_start"),
+  migration = FALSE,
+  input_deaths_annual = TRUE,
+  input_migrants_annual = TRUE
+)
+```
+
+This will return a list of two objects.
+The first has your input data with GGB component columns added:
+
+```{r example_outputs1}
+head(results[[1]])
+```
+
+The second has completeness by each set of ID columns, as well as summaries such as slope,
+intercept, and relative census coverage:
+
+```{r example_outputs2}
+print(results[[2]])
+```
+
+You can also plot the linear fit using the `plot_ggb` function:
+
+```{r plot_results, fig.width=7,fig.height=5}
+id_cols_subset = list(
+  location = "South Africa",
+  sex = "male",
+  age_start = seq(5, 80, 5)
+)
+gg <- plot_ggb(results, id_cols_subset = id_cols_subset)
+print(gg)
+```
+
+## References
+
+ * Bennett NG, Horiuchi S. Mortality estimation from registered deaths in
+   less developed countries. Demography. 1984 May;21(2):217-33.
+ * Dorrington RE. 2013. "The Generalized Growth Balance Method".
+   In Moultrie TA, RE Dorrington, AG Hill, K Hill, IM Timæus and B Zaba (eds).
+   Tools for Demographic Estimation. Paris: International Union for the
+   Scientific Study of Population.
+   http://demographicestimation.iussp.org/content/generalized-growth-balance-method.
+   Accessed May 27 2021.
+ * Hill K, You D, Choi Y. Death distribution methods for estimating adult
+   mortality: sensitivity analysis with simulated data errors. Demographic
+   Research. 2009 Jul 1;21:235-54.
+ * Murray CJ, Rajaratnam JK, Marcus J, Laakso T, Lopez AD. What can we
+   conclude from death registration? Improved methods for evaluating
+   completeness. PLoS Med. 2010 Apr 13;7(4):e1000262.
+ * Tim Riffe, Everton Lima, and Bernardo Queiroz (2017). DDM: Death
+   Registration Coverage Estimation. R package version 1.0.0.
+   https://CRAN.R-project.org/package=DDM
