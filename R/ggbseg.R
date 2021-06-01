@@ -45,14 +45,7 @@
 #'   * 'migrants' (optional): average annual net migrants between census 1 and
 #'       census 2
 #'
-#' @references
-#' Methods are based on the following sources:
-#'   * http://demographicestimation.iussp.org/content/generalized-growth-balance-method
-#'   * http://demographicestimation.iussp.org/content/synthetic-extinct-generations-methods
-#'   * Hill K, You D, Choi Y. Death distribution methods for estimating adult
-#'     mortality: sensitivity analysis with simulated data errors. Demographic
-#'     Research. 2009 Jul 1;21:235-54.
-#'     (https://www.demographic-research.org/volumes/vol21/9/default.htm)
+#' @inherit ggb references
 #'
 #' @examples
 #' library(data.table)
@@ -74,10 +67,10 @@
 #' @export
 
 ggbseg <- function(dt,
-                   age_trim_lower_ggb = 25,
-                   age_trim_upper_ggb = 65,
-                   age_trim_lower_seg = age_trim_lower_ggb,
-                   age_trim_upper_seg = age_trim_upper_ggb,
+                   age_trim_lower_ggb = 5,
+                   age_trim_upper_ggb = 75,
+                   age_trim_lower_seg = 45,
+                   age_trim_upper_seg = 90,
                    id_cols = c("age_start", "sex"),
                    migration = F,
                    input_deaths_annual = T,

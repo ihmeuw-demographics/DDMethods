@@ -47,13 +47,7 @@
 #'   * 'migrants' (optional): average annual net migrants between census 1 and
 #'       census 2
 #'
-#' @references
-#' Methods are based on the following sources:
-#'   * http://demographicestimation.iussp.org/content/synthetic-extinct-generations-methods
-#'   * Hill K, You D, Choi Y. Death distribution methods for estimating adult
-#'     mortality: sensitivity analysis with simulated data errors. Demographic
-#'     Research. 2009 Jul 1;21:235-54.
-#'     (https://www.demographic-research.org/volumes/vol21/9/default.htm)
+#' @inherit ggb references
 #'
 #' @examples
 #' library(data.table)
@@ -75,8 +69,8 @@
 #' @export
 
 seg <- function(dt,
-                age_trim_lower = 25,
-                age_trim_upper = 65,
+                age_trim_lower = 45,
+                age_trim_upper = 90,
                 id_cols = c("age_start", "sex"),
                 migration = F,
                 input_deaths_annual = T,
@@ -110,7 +104,7 @@ seg <- function(dt,
   # light prep
   dt <- copy(dt)
   id_cols_no_age <- setdiff(id_cols, "age_start")
-  setorderv(dt, c(id_cols, "age_start"))
+  setorderv(dt, c(id_cols_no_age, "age_start"))
 
   # convert to annualized deaths and net migrants
   dt[, t := as.numeric(difftime(date2, date1, units = "days")) / 365]
@@ -209,10 +203,8 @@ gen_age_specific_growth_rate <- function(dt, migration) {
 
 
 # Cumulative growth rate
-# This method is derived from Bennett and Horiuchi, Mortality Estimation from
-# Registered Deaths in Less Developed Countries Demography, Vol 21, No 2 May,
-# 1984 -- pp. 217-233.
-# See approximation for 5da just after equation 7, page 220.
+# This method is derived from Bennett and Horiuchi (1984). See approximation
+#   for 5da just after equation 7, page 220.
 gen_cumulative_growth_rate <- function(dt, id_cols_no_age) {
 
   # add up growth up to age a, excluding age a

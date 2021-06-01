@@ -6,10 +6,10 @@
 \usage{
 ggbseg(
   dt,
-  age_trim_lower_ggb = 25,
-  age_trim_upper_ggb = 65,
-  age_trim_lower_seg = age_trim_lower_ggb,
-  age_trim_upper_seg = age_trim_upper_ggb,
+  age_trim_lower_ggb = 5,
+  age_trim_upper_ggb = 75,
+  age_trim_lower_seg = 45,
+  age_trim_upper_seg = 90,
   id_cols = c("age_start", "sex"),
   migration = F,
   input_deaths_annual = T,
@@ -115,11 +115,28 @@ results <- ggbseg(
 \references{
 Methods are based on the following sources:
 \itemize{
-\item http://demographicestimation.iussp.org/content/generalized-growth-balance-method
-\item http://demographicestimation.iussp.org/content/synthetic-extinct-generations-methods
+\item Bennett NG, Horiuchi S. Mortality estimation from registered deaths in
+less developed countries. Demography. 1984 May;21(2):217-33.
+\item Dorrington RE. 2013. "The Generalized Growth Balance Method".
+In Moultrie TA, RE Dorrington, AG Hill, K Hill, IM Timæus and B Zaba (eds).
+Tools for Demographic Estimation. Paris: International Union for the
+Scientific Study of Population.
+http://demographicestimation.iussp.org/content/generalized-growth-balance-method.
+Accessed May 27 2021.
+\item Dorrington RE. 2013. "Synthetic extinct generations methods".
+In Moultrie TA, RE Dorrington, AG Hill, K Hill, IM Timæus and B Zaba (eds).
+Tools for Demographic Estimation. Paris: International Union for the
+Scientific Study of Population.
+http://demographicestimation.iussp.org/content/synthetic-extinct-generations-methods.
+Accessed May 27 2021.
 \item Hill K, You D, Choi Y. Death distribution methods for estimating adult
 mortality: sensitivity analysis with simulated data errors. Demographic
 Research. 2009 Jul 1;21:235-54.
-(https://www.demographic-research.org/volumes/vol21/9/default.htm)
+\item Murray CJ, Rajaratnam JK, Marcus J, Laakso T, Lopez AD. What can we
+conclude from death registration? Improved methods for evaluating
+completeness. PLoS Med. 2010 Apr 13;7(4):e1000262.
+\item Tim Riffe, Everton Lima, and Bernardo Queiroz (2017). DDM: Death
+Registration Coverage Estimation. R package version 1.0.0.
+https://CRAN.R-project.org/package=DDM
 }
 }
