@@ -31,5 +31,5 @@ utils::globalVariables(c("age_length", "age_start", "bdays_age_a",
                          "ratio_30d10_20d40", "ratio_30d10_20d40_1",
                          "ratio_30d10_20d40_2", "sex", "sum_growth",
                          "pop1_copy", "pop_from_deaths", "pop_from_censuses",
-                         "ith_largest"))
+                         "ith_largest", "n_ages"))
 

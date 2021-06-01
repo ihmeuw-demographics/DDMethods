@@ -154,7 +154,10 @@ seg <- function(dt,
   # Synthesis --------------------------------------------------------------
 
   # Do age trimming
-  dt_fit <- dt[age_start >= age_trim_lower & age_start < age_trim_upper]
+  # use specified age trim, but also remove terminal age group if below the
+  #   upper trim
+  dt_fit <- dt[age_start >= age_trim_lower & age_start < age_trim_upper &
+                 age_start < open_age]
 
   # Get completeness
   dt_fit[, completeness := pop_from_deaths / pop_from_censuses]
@@ -293,18 +296,23 @@ gen_pop_numerator <- function(dt,
   nth_largest <- function(x, n) return(max(sort(x)[1:(length(x) - n + 1)]))
 
   # recursively compute age groups going from older to younger
+  dt[, n_ages := uniqueN(age_start), by = id_cols_no_age]
   for (i in 2:length(unique(dt$age_start))) {
     dt[
-      ,
+      n_ages >= i,
       pop_age_a_synthetic_cohort_i :=
         pop_age_a_synthetic_cohort[age_start == nth_largest(age_start, i - 1)] *
         exp(age_length * growth_rate) +
         deaths * exp(0.5 * age_length * growth_rate),
       by = id_cols_no_age
     ]
-    dt[, ith_largest := nth_largest(age_start, i), by = id_cols_no_age]
     dt[
-      age_start == ith_largest,
+      n_ages >= i,
+      ith_largest := nth_largest(age_start, i),
+      by = id_cols_no_age
+    ]
+    dt[
+      n_ages >= i & age_start == ith_largest,
       pop_age_a_synthetic_cohort := pop_age_a_synthetic_cohort_i
     ]
   }

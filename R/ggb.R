@@ -179,7 +179,10 @@ ggb <- function(dt,
   if (migration) dt[, entry_minus_growth := entry_minus_growth + mig_rate]
 
   # Do age trimming
-  dt_fit <- dt[age_start >= age_trim_lower & age_start < age_trim_upper]
+  # use specified age trim, but also remove terminal age group if below the
+  #   upper trim
+  dt_fit <- dt[age_start >= age_trim_lower & age_start < age_trim_upper &
+                 !is.na(entry_minus_growth)]
 
   # Orthogonal regression: entry - growth = k + 1/c * death
   # equivalent to Tim Riffe DDM package "oldschool" method
