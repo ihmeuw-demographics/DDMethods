@@ -71,6 +71,7 @@
 seg <- function(dt,
                 age_trim_lower = 45,
                 age_trim_upper = 90,
+                drop_open_interval = T,
                 id_cols = c("age_start", "sex"),
                 migration = F,
                 input_deaths_annual = T,
@@ -84,6 +85,7 @@ seg <- function(dt,
   checkmate::assert_numeric(age_trim_lower, lower = 0, len = 1)
   checkmate::assert_numeric(age_trim_upper, lower = 0, len = 1)
   checkmate::assert_true(age_trim_lower < age_trim_upper)
+  checkmate::assert_logical(drop_open_interval)
   checkmate::assert_character(id_cols)
   checkmate::assert_logical(migration, len = 1)
   checkmate::assert_choice(
@@ -119,6 +121,10 @@ seg <- function(dt,
   # add age length
   dt[, age_length := shift(age_start, 1, type = "lead") - age_start,
      by = id_cols_no_age]
+  dt[, age_length2 := age_start - shift(age_start, 1, type = "lag"),
+     by = id_cols_no_age] # fill in terminal age group
+  dt[is.na(age_length), age_length := age_length2]
+  dt[, c("age_length2") := NULL]
 
 
   # Compute components ------------------------------------------------------
@@ -156,8 +162,8 @@ seg <- function(dt,
   # Do age trimming
   # use specified age trim, but also remove terminal age group if below the
   #   upper trim
-  dt_fit <- dt[age_start >= age_trim_lower & age_start < age_trim_upper &
-                 age_start < open_age]
+  dt_fit <- dt[age_start >= age_trim_lower & age_start < age_trim_upper]
+  if (drop_open_interval) dt_fit <- dt_fit[age_start < open_age]
 
   # Get completeness
   dt_fit[, completeness := pop_from_deaths / pop_from_censuses]
@@ -289,7 +295,7 @@ gen_pop_numerator <- function(dt,
   dt[
     age_start == open_age,
     pop_age_a_synthetic_cohort :=
-      deaths * exp(ex * growth_rate) - (ex * growth_rate)^2 / 6
+      deaths * (exp(ex * growth_rate) - (ex * growth_rate)^2 / 6)
   ]
 
   # helper function to grab n-th largest value from vector

@@ -20,6 +20,12 @@
 #' @param age_trim_upper_seg \[`numeric(1)`\]\cr
 #'   age-trim: upper bound of 'age_start' included for SEG (exclusive).
 #'   defaults to be the same as GGB upper age trim.
+#' @param drop_open_interval_ggb \[`logical(1)`\]\cr
+#'   Whether to drop the open age interval if it falls within the age trim
+#'   bounds (for GGB component).
+#' @param drop_open_interval_seg \[`logical(1)`\]\cr
+#'   Whether to drop the open age interval if it falls within the age trim
+#'   bounds (for SEG component).
 #' @inheritParams seg
 #' @inheritParams ggb
 #'
@@ -72,6 +78,8 @@ ggbseg <- function(dt,
                    age_trim_upper_ggb = 75,
                    age_trim_lower_seg = 45,
                    age_trim_upper_seg = 90,
+                   drop_open_interval_ggb = T,
+                   drop_open_interval_seg = T,
                    id_cols = c("age_start", "sex"),
                    migration = F,
                    input_deaths_annual = T,
@@ -89,6 +97,8 @@ ggbseg <- function(dt,
   checkmate::assert_numeric(age_trim_upper_seg, lower = 0, len = 1)
   checkmate::assert_true(age_trim_lower_ggb < age_trim_upper_ggb)
   checkmate::assert_true(age_trim_lower_seg < age_trim_upper_seg)
+  checkmate::assert_logical(drop_open_interval_ggb)
+  checkmate::assert_logical(drop_open_interval_seg)
   checkmate::assert_character(id_cols)
   checkmate::assert_logical(migration, len = 1)
   checkmate::assert_choice(method_growth_rate, choices = c("hyc", "tr_iussp"))
@@ -124,6 +134,7 @@ ggbseg <- function(dt,
     dt = dt,
     age_trim_lower = age_trim_lower_ggb,
     age_trim_upper = age_trim_upper_ggb,
+    drop_open_interval = drop_open_interval_ggb,
     id_cols = id_cols,
     migration = migration,
     input_deaths_annual = TRUE,
@@ -148,6 +159,7 @@ ggbseg <- function(dt,
     dt = dt,
     age_trim_lower = age_trim_lower_seg,
     age_trim_upper = age_trim_upper_seg,
+    drop_open_interval = drop_open_interval_seg,
     id_cols = id_cols,
     migration = migration,
     input_deaths_annual = TRUE,
