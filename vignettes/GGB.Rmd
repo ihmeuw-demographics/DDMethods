@@ -249,6 +249,13 @@ gg <- plot_ggb(results, id_cols_subset = id_cols_subset)
 print(gg)
 ```
 
+In this plot, the x-axis is the incomplete death rate ($\frac{D(a+)}{N(a+)}$).
+The y-axis is the entry rate minus estimated growth rate, $b(a+)−r(a+)$.
+Each dot represents one age value, $a$, and is labeled with that value.
+The slope and intercept of the trend line are the slope and intercept described above which are used to estimate completeness.
+This plot can be used to evaluate age-trim selection, based on outliers.
+Trends in residuals can also indicate potential error due to migration.
+
 ## References
 
  * Bennett NG, Horiuchi S. Mortality estimation from registered deaths in
