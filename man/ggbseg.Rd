@@ -10,6 +10,8 @@ ggbseg(
   age_trim_upper_ggb = 75,
   age_trim_lower_seg = 45,
   age_trim_upper_seg = 90,
+  drop_open_interval_ggb = T,
+  drop_open_interval_seg = T,
   id_cols = c("age_start", "sex"),
   migration = F,
   input_deaths_annual = T,
@@ -37,6 +39,14 @@ Defaults to be the same as GGB lower age trim.}
 \item{age_trim_upper_seg}{[\code{numeric(1)}]\cr
 age-trim: upper bound of 'age_start' included for SEG (exclusive).
 defaults to be the same as GGB upper age trim.}
+
+\item{drop_open_interval_ggb}{[\code{logical(1)}]\cr
+Whether to drop the open age interval if it falls within the age trim
+bounds (for GGB component).}
+
+\item{drop_open_interval_seg}{[\code{logical(1)}]\cr
+Whether to drop the open age interval if it falls within the age trim
+bounds (for SEG component).}
 
 \item{id_cols}{[\code{character()}]\cr
 Column names that uniquely identify rows of \code{dt}.

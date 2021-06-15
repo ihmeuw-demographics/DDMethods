@@ -14,6 +14,9 @@
 #'   age-trim: lower bound of 'age_start' included (inclusive)
 #' @param age_trim_upper \[`numeric(1)`\]\cr
 #'   age-trim: upper bound of 'age_start' included (exclusive)
+#' @param drop_open_interval \[`logical(1)`\]\cr
+#'   Whether to drop the open age interval if it falls within the age trim
+#'   bounds.
 #' @param id_cols \[`character()`\]\cr
 #'   Column names that uniquely identify rows of `dt`.
 #'   One column must be 'age_start'. When 'age_start' is removed, these
@@ -110,6 +113,7 @@
 ggb <- function(dt,
                 age_trim_lower = 5,
                 age_trim_upper = 75,
+                drop_open_interval = T,
                 id_cols = "age_start",
                 migration = F,
                 input_deaths_annual = T,
@@ -123,6 +127,7 @@ ggb <- function(dt,
   checkmate::assert_numeric(age_trim_lower, lower = 0, len = 1)
   checkmate::assert_numeric(age_trim_upper, lower = 0, len = 1)
   checkmate::assert_true(age_trim_lower < age_trim_upper)
+  checkmate::assert_logical(drop_open_interval)
   checkmate::assert_character(id_cols)
   checkmate::assert_logical(migration, len = 1)
   checkmate::assert_logical(input_deaths_annual, len = 1)
@@ -179,10 +184,10 @@ ggb <- function(dt,
   if (migration) dt[, entry_minus_growth := entry_minus_growth + mig_rate]
 
   # Do age trimming
-  # use specified age trim, but also remove terminal age group if below the
-  #   upper trim
+  dt[, open_age := max(age_start), by = id_cols_no_age]
   dt_fit <- dt[age_start >= age_trim_lower & age_start < age_trim_upper &
                  !is.na(entry_minus_growth)]
+  if (drop_open_interval) dt_fit <- dt_fit[age_start < open_age]
 
   # Orthogonal regression: entry - growth = k + 1/c * death
   # equivalent to Tim Riffe DDM package "oldschool" method
@@ -222,8 +227,11 @@ gen_bdays_age_a <- function(dt, id_cols_no_age) {
   dt[, pop1_aminus1 := shift(pop1, 1, type = "lag"), by = id_cols_no_age]
   dt[, age_length := shift(age_start, 1, type = "lead") - age_start,
      by = id_cols_no_age]
+  dt[, age_length2 := age_start - shift(age_start, 1, type = "lag"),
+     by = id_cols_no_age] # fill in terminal age group
+  dt[is.na(age_length), age_length := age_length2]
   dt[, bdays_age_a := (1 / age_length) * sqrt(pop1_aminus1 * pop2)]
-  dt[, pop1_aminus1 := NULL]
+  dt[, c("pop1_aminus1", "age_length2") := NULL]
 }
 
 # Population age a+

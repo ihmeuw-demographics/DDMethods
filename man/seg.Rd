@@ -8,6 +8,7 @@ seg(
   dt,
   age_trim_lower = 45,
   age_trim_upper = 90,
+  drop_open_interval = T,
   id_cols = c("age_start", "sex"),
   migration = F,
   input_deaths_annual = T,
@@ -26,6 +27,10 @@ age-trim: lower bound of 'age_start' included (inclusive)}
 
 \item{age_trim_upper}{[\code{numeric(1)}]\cr
 age-trim: upper bound of 'age_start' included (exclusive)}
+
+\item{drop_open_interval}{[\code{logical(1)}]\cr
+Whether to drop the open age interval if it falls within the age trim
+bounds.}
 
 \item{id_cols}{[\code{character()}]\cr
 Column names that uniquely identify rows of \code{dt}.
