@@ -69,11 +69,11 @@ Method to use for computation of growth rate. One of:
 \value{
 [\code{list(2)}]\cr
 \itemize{
-\item [\code{data.table()}] Input \code{dt} returned with additional variables
+\item \code{dt} [\code{data.table()}] Input \code{dt} returned with additional variables
 computed in GGB estimation, such as birthdays age a, population age
 a plus, entry rate, growth rate, and partial death rate.
-\item [\code{data.table()}] Slope, intercept, and estimated completeness by
-unique combination of \code{id_cols}.
+\item \code{completeness} [\code{data.table()}] Slope, intercept, and estimated
+completeness by unique combination of \code{id_cols}.
 }
 }
 \description{

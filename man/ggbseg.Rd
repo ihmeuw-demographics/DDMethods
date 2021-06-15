@@ -96,11 +96,11 @@ aged x to x+n. This matches Tim Riffe DDM package and IUSSP methods.
 \value{
 [\code{list(2)}]\cr
 \itemize{
-\item [\code{data.table()}] Input \code{dt} returned with additional variables
+\item \code{dt} [\code{data.table()}] Input \code{dt} returned with additional variables
 computed in GGBSEG estimation, such as birthdays age a, population age
 a plus, and synthetic cohort population age a plus.
-\item [\code{data.table()}] Estimated completeness by unique combination of
-\code{id_cols}.
+\item \code{completeness} [\code{data.table()}] Estimated completeness by unique
+combination of \code{id_cols}.
 }
 }
 \description{

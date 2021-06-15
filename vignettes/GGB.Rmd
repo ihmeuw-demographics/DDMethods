@@ -107,7 +107,7 @@ results <- ggb(
   input_deaths_annual = TRUE,
   input_migrants_annual = TRUE
 )
-dt <- results[[1]]
+dt <- results[["dt"]]
 base_cols <- c("age_start", "pop1", "pop2", "deaths")
 print(dt[, .SD, .SDcols = c(base_cols, "bdays_age_a", "pop_age_aplus", "entry_rate")])
 ```
@@ -155,7 +155,7 @@ $$d(a+) = \frac{D(a+)}{N(a+)}$$
 
 where the numerator is deaths from the data and the denominator is population as estimated above.
 
-Assuming constant completeness over age, deaths become $\frac{D(a+)}{c}$ where $c$ is death registration completeness.
+When death registration is incomplete, true deaths are $\frac{D(a+)}{c}$ where $c$ is death registration completeness.
 Additionally, the denominator $N(a+)$ is estimated from the two censuses and may be biased if one census has higher coverage.
 
 To estimate this bias from censuses, we'll go back to how we estimated $N(a+)$,
@@ -219,8 +219,7 @@ results <- ggb(
   age_trim_upper = 85,
   id_cols = c("location", "sex", "age_start"),
   migration = FALSE,
-  input_deaths_annual = TRUE,
-  input_migrants_annual = TRUE
+  input_deaths_annual = TRUE
 )
 ```
 
@@ -228,14 +227,14 @@ This will return a list of two objects.
 The first has your input data with GGB component columns added:
 
 ```{r example_outputs1}
-head(results[[1]])
+head(results[["dt"]])
 ```
 
 The second has completeness by each set of ID columns, as well as summaries such as slope,
 intercept, and relative census coverage:
 
 ```{r example_outputs2}
-print(results[[2]])
+print(results[["completeness"]])
 ```
 
 You can also plot the linear fit using the `plot_ggb` function:
