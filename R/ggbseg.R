@@ -30,11 +30,11 @@
 #' @inheritParams ggb
 #'
 #' @return \[`list(2)`\]\cr
-#'   * \[`data.table()`\] Input `dt` returned with additional variables
+#'   * `dt` \[`data.table()`\] Input `dt` returned with additional variables
 #'     computed in GGBSEG estimation, such as birthdays age a, population age
 #'     a plus, and synthetic cohort population age a plus.
-#'   * \[`data.table()`\] Estimated completeness by unique combination of
-#'     `id_cols`.
+#'   * `completeness` \[`data.table()`\] Estimated completeness by unique
+#'     combination of `id_cols`.
 #'
 #' @details
 #' Columns of `dt`:
@@ -140,7 +140,7 @@ ggbseg <- function(dt,
     input_deaths_annual = TRUE,
     input_migrants_annual = TRUE,
     method_growth_rate = method_growth_rate
-  )[[2]]
+  )[["completeness"]]
 
   dt <- merge(
     dt, ggb_results[, .SD, .SDcols = c(id_cols_no_age, "k1_over_k2")],
@@ -168,8 +168,8 @@ ggbseg <- function(dt,
   )
 
   # for record keeping, change column names a bit
-  setnames(seg_results[[1]], "pop1", "pop1_ggb_adjusted")
-  setnames(seg_results[[1]], "pop1_copy", "pop1")
+  setnames(seg_results[["dt"]], "pop1", "pop1_ggb_adjusted")
+  setnames(seg_results[["dt"]], "pop1_copy", "pop1")
 
   return(seg_results)
 

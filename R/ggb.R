@@ -46,11 +46,11 @@
 #'        log(N2(a+))) / 2))}.
 #'
 #' @return \[`list(2)`\]\cr
-#'   * \[`data.table()`\] Input `dt` returned with additional variables
+#'   * `dt` \[`data.table()`\] Input `dt` returned with additional variables
 #'     computed in GGB estimation, such as birthdays age a, population age
 #'     a plus, entry rate, growth rate, and partial death rate.
-#'   * \[`data.table()`\] Slope, intercept, and estimated completeness by
-#'     unique combination of `id_cols`.
+#'   * `completeness` \[`data.table()`\] Slope, intercept, and estimated
+#'     completeness by unique combination of `id_cols`.
 #'
 #' @details
 #' Columns of `dt`:
@@ -209,7 +209,7 @@ ggb <- function(dt,
   # format and return
   output_vars <- c("slope", "intercept", "completeness", "k1_over_k2")
   dt_fit <- unique(dt_fit[, .SD, .SDcols = c(id_cols_no_age, output_vars)])
-  results <- list(dt, dt_fit)
+  results <- list("dt" = dt, "completeness" = dt_fit)
   return(results)
 
 }
@@ -296,8 +296,8 @@ gen_mig_rate <- function(dt, id_cols_no_age) {
 
 plot_ggb <- function(results, id_cols_subset) {
 
-  dt <- results[[1]]
-  fit <- results[[2]]
+  dt <- results[["dt"]]
+  fit <- results[["completeness"]]
 
   # subset based on id_cols
   for (col in names(id_cols_subset)) {

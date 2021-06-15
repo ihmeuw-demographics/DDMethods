@@ -25,11 +25,11 @@
 #' @inheritParams ggb
 #'
 #' @return \[`list(2)`\]\cr
-#'   * \[`data.table()`\] Input `dt` returned with additional variables
+#'   * `dt` \[`data.table()`\] Input `dt` returned with additional variables
 #'     computed in SEG estimation, such as birthdays age a, population age
 #'     a plus, and synthetic cohort population age a plus.
-#'   * \[`data.table()`\] Estimated completeness by unique combination of
-#'     `id_cols`.
+#'   * `completeness` \[`data.table()`\] Estimated completeness by unique
+#'     combination of `id_cols`.
 #'
 #' @details
 #' Columns of `dt`:
@@ -177,7 +177,7 @@ seg <- function(dt,
   # format and return
   output_vars <- c("completeness")
   dt_fit <- unique(dt_fit[, .SD, .SDcols = c(id_cols_no_age, output_vars)])
-  results <- list(dt, dt_fit)
+  results <- list("dt" = dt, "completeness" = dt_fit)
   return(results)
 
 }
