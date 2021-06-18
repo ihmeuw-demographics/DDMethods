@@ -53,6 +53,7 @@ deaths_per_year <- function(years_deaths,
   checkmate::assert_true(length(years_deaths) == length(input_deaths))
   checkmate::assert_numeric(years_census, len = 2)
   checkmate::assert_true(years_census[1] < years_census[2])
+  checkmate::assert_numeric(step_size, len = 1)
 
   # if only one death year provided, make that the mean
   if (length(input_deaths) == 1) {
