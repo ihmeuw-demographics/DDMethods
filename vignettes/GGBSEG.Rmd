@@ -1,0 +1,102 @@
+---
+title: "GGBSEG"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{GGBSEG}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(DDMethods)
+library(data.table)
+```
+
+## General Growth Balance - Synthetic Extinct Generations Hybrid (GGBSEG)
+
+This vignette describes the methods for the General Growth Balance - Synthetic Extinct Generations hybrid Death Distribution Method (DDM) for estimating completeness of death registration.
+These methods are not original to this package, but are summarized here.
+For original sources, see the references section of this vignette.
+
+This vignette also builds off of the vignettes for the GGB and SEG methods.
+
+## Input data
+
+See the sections on input data in the GGB and SEG vignettes.
+
+## The GGBSEG method
+
+The GGBSEG method combines GGB and SEG as follows:
+
+1. The first step of the GGBSEG hybrid method is to run the GGB method.
+
+2. One output of GGB is the coverage of census 1 relative to census 2 ($\frac{k1}{k2}$).
+Population counts from census 1 are divided by this relative coverage value to get adjusted census 1 population.
+
+3. Finally, the adjusted census 1 population, along with the original input for deaths and census 2 population, are used as input to the SEG method.
+The output of SEG is the final completeness estimate for GGBSEG.
+
+Note that different age trims can be used for the GGB component and the SEG component.
+
+## Using this package for GGBSEG
+
+To use this package for GGBSEG, use the `ggbseg` function:
+
+```{r example}
+# setup data
+data(zaf_2001_2007)
+dt <- copy(zaf_2001_2007)
+dt$cd_region <- "west"
+
+# run ggbseg
+results <- ggbseg(
+  dt,
+  age_trim_lower_ggb = 5,
+  age_trim_upper_ggb = 75,
+  age_trim_lower_seg = 55,
+  age_trim_upper_seg = 90, 
+  id_cols = c("location", "sex", "age_start"),
+  migration = FALSE,
+  input_deaths_annual = FALSE
+)
+```
+
+This will return a list of two objects.
+The first has your input data with intermediate columns added:
+
+```{r example_outputs1}
+head(results[["dt"]])
+```
+
+The second has completeness by each set of ID columns:
+
+```{r example_outputs2}
+print(results[["completeness"]])
+```
+
+## References
+
+ * Bennett NG, Horiuchi S. Mortality estimation from registered deaths in
+   less developed countries. Demography. 1984 May;21(2):217-33.
+ * Dorrington RE. 2013. "The Generalized Growth Balance Method".
+   In Moultrie TA, RE Dorrington, AG Hill, K Hill, IM Timæus and B Zaba (eds).
+   Tools for Demographic Estimation. Paris: International Union for the
+   Scientific Study of Population.
+   http://demographicestimation.iussp.org/content/generalized-growth-balance-method.
+   Accessed May 27 2021.
+ * Hill K, You D, Choi Y. Death distribution methods for estimating adult
+   mortality: sensitivity analysis with simulated data errors. Demographic
+   Research. 2009 Jul 1;21:235-54.
+ * Murray CJ, Rajaratnam JK, Marcus J, Laakso T, Lopez AD. What can we
+   conclude from death registration? Improved methods for evaluating
+   completeness. PLoS Med. 2010 Apr 13;7(4):e1000262.
+ * Tim Riffe, Everton Lima, and Bernardo Queiroz (2017). DDM: Death
+   Registration Coverage Estimation. R package version 1.0.0.
+   https://CRAN.R-project.org/package=DDM
