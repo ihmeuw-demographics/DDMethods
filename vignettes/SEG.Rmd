@@ -1,0 +1,273 @@
+---
+title: "SEG"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{SEG}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(DDMethods)
+library(data.table)
+```
+
+## Synthetic Extinct Generations (SEG)
+
+This vignette describes the methods for the Synthetic Extinct Generations Death Distribution Method (DDM) for estimating completeness of death registration.
+These methods are not original to this package, but are summarized here.
+For original sources, see the references section of this vignette.
+
+## Input data
+
+Input data required for SEG is:
+
+- Age-specific population counts from two censuses (recommended < 20 years apart)
+- Age-specific death counts from death registration in between the two censuses
+
+Age-specific death counts can come from one or many years of death registration, but should be converted to average annual counts.
+
+This package includes an example dataset, which matches the [example used but the IUSSP](http://demographicestimation.iussp.org/content/generalized-growth-balance-method).
+
+The example dataset is for South African males, between 2001 and 2007:
+
+```{r zaf_data}
+head(zaf_2001_2007)
+```
+
+As-is, these data are for total deaths in the interval, so we need to divide deaths by the time between censuses in years.
+Note that in the `seg` function, this happens internally, via the `input_deaths_annual` argument.
+
+```{r zaf_annual}
+# convert to average annual values
+dt <- copy(zaf_2001_2007)
+dt[, t := as.numeric(difftime(date2, date1, units = "days")) / 365]
+dt[, deaths := deaths / t]
+dt[, migrants := migrants / t]
+```
+
+## A bit on notation
+
+Assume the following notation:
+
+- $n$ : length of age interval in data
+- $N1$ : population at census 1
+- $N2$ : population at census 2
+- $N$ : mean population between census 1 and census 2
+- $D$ : average annual deaths recorded between censuses
+- $_nr_x$ : age-specific growth rate between ages $x$ and $x+n$
+- $r_x$ : cumulative growth rate up to age $x$
+- $e_x$ : life expectancy at age $x$
+
+Additionally, we use traditional demographic notation where ${_nZ_x}$ stands for some demographic measure, $Z$, for the age interval $x$ to $x+n$.
+
+## Summary
+
+Consider a hypothetical birth cohort, born in 1900, with a population of 100 at age 50 in the year 1950.
+Assuming there is no migration and the vital registration is complete (and no one lived beyond age 120),
+we could count up all of the deaths observed in this birth cohort between 1950 and present-day and it should add up to 100 deaths.
+In other words, each of the 100 individuals in the population in 1950 died and was counted by the vital registration system.
+If instead, 90 deaths were counted, we could compare the 90 recorded deaths to the population of 100 and estimate completeness to be 90%.
+The SEG method leverages this relationship between population and mortality,
+but uses period-specific mortality as opposed to cohort-specific mortality.
+
+To summarize the basic relationship:
+$$\text{completeness} \approx \frac{\text{pop estimated from deaths}}{\text{pop estimated from censuses}}$$
+Note that the population of interest in the numerator and denominator can be:
+
+1. $N_x$ : the population aged $x$, also equivalent to the average number of birthdays age $x$ in one year.
+2. ${_nN_x}$ : the population in the age interval $x$ to $x+n$ where $n$ is commonly 5 to match 5-year age intervals present in abridged data.
+
+Both numerator and denominator types can be used in the `DDMethods` package.
+
+## Population from censuses
+
+The population from censuses can be estimated as follows:
+
+$N_a$: Average annual birthdays aged $a$ is approximated as the geometric mean of ${_nN1_{a-n}}$ and ${_nN2_a}$ divided by the length of the age interval ($n$):
+$$\text{birthdays aged } a = \frac{1}{n}\sqrt{{_nN1_{a-n}} \cdot {_nN2_a}}$$
+$_nN_a$: Population aged $a$ to $a+n$ is approximated as the geometric mean of $_nN_a$ from census 1 and $_nN_a$ from census 2:
+$$_nN_a = \sqrt{_nN1_a \cdot _nN2_a}$$
+
+## Population from death registration
+
+The population from death registration is estimated using the synthetic cohort method.
+In short, we first compute age-specific population growth between censuses,
+then aggregate to get cumulative growth over age.
+Cumulative growth rate is used to go from recorded deaths to $_nd_x$ to get the ratio of $_{30}d_{10}$ to $_{20}d_{40}$.
+This ratio is used to match with Coale-Demeny model life tables, to approximate life expectancy in the open age interval.
+From here, the synthetic cohort population is computed recursively starting at the open interval and working backwards,
+using recorded deaths, life expectancy, and age-specific growth rate.
+The following sections will describe each of these steps in more detail.
+
+### Age-specific population growth
+
+For the age group in interval $a$ to $a+n$,
+age-specific population growth, $_nr_a$, can be approximated as:
+
+$$_nr_a = \frac{1}{t} \cdot \text{ln} \Big( \frac{_nN2_a}{nN1_a} \Big)$$
+
+### Cumulative growth over age
+
+To get cumulative growth over age, compute:
+$$r_a = n \cdot \sum_{x = 0}^{a-n}(_nr_x) + \big(\frac{n}{2} \cdot {_nr_a}\big)$$
+
+according to Bennett and Horiuchi (1984).
+
+### $_nd_x$ and ratio $_{30}d_{10}$ to $_{20}d_{40}$
+
+Then, $_nd_x$ is equal to recorded deaths times the exponentiated cumulative growth rate,
+again following Bennett and Horiuchi:
+
+$$_nd_x = {_nD_x} \cdot \text{exp}(r_x)$$
+
+From here it is straightforward to sum over the relevant age groups and divide to get $\frac{_{30}d_{10}}{_{20}d_{40}}$.
+
+### Life expectancy in the open interval
+
+Using the Coale Demeny model life tables,
+we can construct a function that maps from $\frac{_{30}d_{10}}{_{20}d_{40}}$ to life expectancy for a given open age interval.
+
+This plot shows the relationship between $\frac{_{30}d_{10}}{_{20}d_{40}}$ and life expectancy for the CD West male life tables:
+
+```{r cdwest, echo=F, fig.width=7,fig.height=5}
+library(ggplot2)
+cd <- copy(coale_demeny_ex)
+cd <- cd[sex == "male" & cd_region == "west"]
+
+gg <- ggplot(data = cd[age_start >= 60],
+             aes(x = ratio_30d10_20d40,
+                 y = ex,
+                 color = as.factor(age_start))) +
+  geom_line() +
+  geom_point() +
+  theme_classic() +
+  labs(x = "Ratio 30d10 to 20d40",
+       y = "Life expectancy (ex)",
+       color = "Open age group",
+       title = "Coale Demeny West, males") +
+  scale_x_continuous(breaks = seq(0, 2, 0.2)) +
+  scale_y_continuous(breaks = seq(0, 20, 5))
+print(gg)
+```
+
+The `DDMethods` package uses linear interpolation of ex given discrete values from Coale Demeny life tables to get a continuous mapping from ratio to ex.
+
+The `seg` function requires a `cd_region` column in your input data to select which Coale Demeny region should be used for this mapping.
+The options are 'west', 'east', 'south', and 'north'.
+
+```{r cd_region}
+dt[, cd_region := "west"]
+```
+  
+
+### Population
+
+Next, start with the open age interval and find:
+
+$$N(a)_{\text{open}} = {_nD_a} \Bigg[ \text{exp}(e_a \cdot {_nr_a}) - \frac{(e_a \cdot {_nr_a})^2 }{6} \Bigg]$$
+   
+Then, recursively compute population for previous age groups:
+
+$$N(a) = N(a+n) \cdot \text{exp}(n \cdot {_nr_a}) + {_nD_a} \cdot \text{exp}(0.5 \cdot n \cdot {_nr_a})$$
+To use the population numerator and denominator type $_nN_x$,
+further calculate:
+
+$$_nN_a = (N(a) + N(a+n)) (\frac{n}{2})$$
+
+For more details on derivation of these equations, see the references below.
+
+## Synthesis to estimate completeness
+
+For each age, $a$, within the selected age trim interval, compute:
+
+$$\text{completeness} \approx \frac{\text{pop estimated from deaths}}{\text{pop estimated from censuses}}$$
+And then take the mean over the completeness estimates generated from this set of ages to get a final estimate of completeness.
+
+
+## Using this package for SEG
+
+To use this package for SEG, use the `seg` function:
+
+```{r example}
+results <- seg(
+  dt,
+  age_trim_lower = 55,
+  age_trim_upper = 90,
+  id_cols = c("location", "sex", "age_start"),
+  migration = FALSE,
+  input_deaths_annual = TRUE,
+  method_numerator_denominator_type = "Nx"
+)
+```
+
+This will return a list of two objects.
+The first has your input data with SEG component columns added:
+
+```{r example_outputs1}
+head(results[["dt"]])
+```
+
+The second has completeness by each set of ID columns, as well as summaries such as slope,
+intercept, and relative census coverage:
+
+```{r example_outputs2}
+print(results[["completeness"]])
+```
+
+To evaluate completeness from each component age value, $a$, we can do the following:
+
+```{r example_each_a, fig.width=7,fig.height=5}
+dt <- results[["dt"]]
+dt[, completeness := pop_from_deaths / pop_from_censuses]
+dt[, included_in_age_trim := between(age_start, 55, 90)]
+gg <- ggplot(data = dt[!is.na(completeness)],
+             aes(x = age_start, y = completeness,
+                 color = included_in_age_trim)) +
+  geom_point() +
+  geom_hline(yintercept = results[["completeness"]]$completeness) +
+  theme_classic() +
+  scale_x_continuous(breaks = seq(0, 85, 5)) +
+  labs(x = "Age (a)", y = "Completeness", title = "ZAF males 2007-2010",
+       color = "Included in age-trim")
+print(gg)
+```
+
+Note that in some cases, like here, you can see how age-trim selection would strongly influence the summary of completeness.
+In our simulation exercises, we found that [55, 90) performed the best.
+If the completeness has an increasing or decreasing trend with $a$,
+it may be a sign that there is either strong migration or large variation in census coverage.
+The later is a situation where the GGB-SEG hybrid is useful.
+
+Additionally, we need to be careful in the interpretation of these plots to note that this is not age-specific completeness.
+In other words, it is not completeness for the interval $a$ to $a+n$.
+Rather, it is overall completeness estimated using information from ages $a$ and above.
+
+
+## References
+
+ * Bennett NG, Horiuchi S. Mortality estimation from registered deaths in
+   less developed countries. Demography. 1984 May;21(2):217-33.
+ * Dorrington RE. 2013. "Synthetic extinct generations methods".
+   In Moultrie TA, RE Dorrington, AG Hill, K Hill, IM Timæus and B Zaba (eds).
+   Tools for Demographic Estimation. Paris: International Union for the
+   Scientific Study of Population.
+   http://demographicestimation.iussp.org/content/synthetic-extinct-generations-methods.
+   Accessed May 27 2021.
+ * Hill K, You D, Choi Y. Death distribution methods for estimating adult
+   mortality: sensitivity analysis with simulated data errors. Demographic
+   Research. 2009 Jul 1;21:235-54.
+ * Murray CJ, Rajaratnam JK, Marcus J, Laakso T, Lopez AD. What can we
+   conclude from death registration? Improved methods for evaluating
+   completeness. PLoS Med. 2010 Apr 13;7(4):e1000262.
+ * Tim Riffe, Everton Lima, and Bernardo Queiroz (2017). DDM: Death
+   Registration Coverage Estimation. R package version 1.0.0.
+   https://CRAN.R-project.org/package=DDM
+

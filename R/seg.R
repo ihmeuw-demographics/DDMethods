@@ -205,7 +205,7 @@ gen_pop_denominator <- function(dt,
 }
 
 # Age-specific growth rate
-# (1 / t) * ln(N2(a) / N1(a)) - migrants / sqrt(pop1 * pop2)
+# (1 / t) * ln(N2(a) / N1(a)) - migrants / sqrt(N1(a) * N2(a))
 gen_age_specific_growth_rate <- function(dt, migration) {
   if (migration) {
     dt[, growth_rate := (1 / t) * log(pop2 / pop1) -
