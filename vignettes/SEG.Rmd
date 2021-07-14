@@ -158,7 +158,7 @@ gg <- ggplot(data = cd[age_start >= 60],
 print(gg)
 ```
 
-The `DDMethods` package uses linear interpolation between discrete Coale Demeny life tables to get a continuous mapping.
+The `DDMethods` package uses linear interpolation of ex given discrete values from Coale Demeny life tables to get a continuous mapping from ratio to ex.
 
 The `seg` function requires a `cd_region` column in your input data to select which Coale Demeny region should be used for this mapping.
 The options are 'west', 'east', 'south', and 'north'.
