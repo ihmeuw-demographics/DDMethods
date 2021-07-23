@@ -18,7 +18,7 @@ remotes::install_github("ihmeuw-demographics/DDMethods")
 
 ## Getting help
 
-DDMethods function documentation and vignettes can be found at [https://ihmeuw-demographics.github.io/DDMethods/index.html](https://ihmeuw-demographics.github.io/DDMethods/index.html)
+DDMethods function documentation and vignettes can be found at [http://sandbox-web.ihme.washington.edu/~svcdemographicsci/pkgdown/DDMethods/](http://sandbox-web.ihme.washington.edu/~svcdemographicsci/pkgdown/DDMethods/)
 
 If you encounter a clear bug, missing documentation, or a feature you'd like to see implemented please file an issue on [github](https://github.com/ihmeuw-demographics/DDMethods/issues) with the information requested in the issue template.
 
