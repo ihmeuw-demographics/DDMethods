@@ -6,7 +6,7 @@ Authors@R: c(person("Charlton", "Callender", email = "chacalle@uw.edu", role = "
              person("Katie", "Paulson", email = "krpaul@uw.edu", role = "aut"),
              person("Haidong", "Wang", email = "haidong@uw.edu", role = "cre"),
              person("Institute for Health Metrics and Evaluation", role = c("cph", "fnd")))
-URL: https://github.com/ihmeuw-demographics/DDMethods/
+URL: https://github.com/ihmeuw-demographics/DDMethods/, https://ihmeuw-demographics.github.io/DDMethods/
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
