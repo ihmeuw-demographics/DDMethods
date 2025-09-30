@@ -2,9 +2,11 @@ Package: DDMethods
 Version: 0.0.0.9000
 Title: Death Distribution Methods (DDMs)
 Description: Perform Death Distribution Methods (DDMs) for the estimation of completeness of death registration systems.
-Authors@R: c(person("Charlton", "Callender", email = "chacalle@uw.edu", role = "aut"),
+Authors@R: c(person("Austin", "Schumacher", email = "aeschuma@uw.edu", role = "cre"),
+             person("Charlton", "Callender", email = "chacalle@uw.edu", role = "aut"),
              person("Katie", "Paulson", email = "krpaul@uw.edu", role = "aut"),
-             person("Haidong", "Wang", email = "haidong@uw.edu", role = "cre"),
+             person("Spencer", "Pease", email = "spease@ue.edu", role = "ctb"),
+             person("Haidong", "Wang", email = "haidong@uw.edu", role = "aut"),
              person("Institute for Health Metrics and Evaluation", role = c("cph", "fnd")))
 URL: https://github.com/ihmeuw-demographics/DDMethods/, https://ihmeuw-demographics.github.io/DDMethods/
 License: GPL-3
